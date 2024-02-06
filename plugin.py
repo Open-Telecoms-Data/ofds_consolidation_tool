@@ -37,11 +37,17 @@ class OFDSDedupPlugin:
         del self.action
 
     def run(self):
+        logger.info("Running OFDS Consolidation plugin")
+
+        print("Running OFDS Consolidation plugin")
+        self.tool_dialog.show()
+
         osm_tms = "type=xyz&url=https://tile.openstreetmap.org/{z}/{x}/{y}.png&zmax=19&zmin=0&http-header:referer="
-        osm_layer = QgsRasterLayer(osm_tms,'OSM', 'wms')
+        osm_layer = QgsRasterLayer(osm_tms, "OSM", "wms")
 
         vlayer = QgsVectorLayer(DATA_PATH.as_posix(), "Kenya Spans", "ogr")
 
-        self.tool_dialog.ui.canvas.setExtent(vlayer.extent())
-        self.tool_dialog.ui.canvas.setLayers([vlayer, osm_layer])
-        self.tool_dialog.show()
+        canvas_left = self.tool_dialog.ui.canvas_left
+
+        canvas_left.setExtent(vlayer.extent())
+        canvas_left.setLayers([vlayer, osm_layer])
