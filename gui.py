@@ -14,16 +14,22 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_OFDSDedupToolDialog(object):
     def setupUi(self, OFDSDedupToolDialog):
         OFDSDedupToolDialog.setObjectName("OFDSDedupToolDialog")
-        OFDSDedupToolDialog.resize(400, 300)
+        OFDSDedupToolDialog.resize(950, 591)
         OFDSDedupToolDialog.setSizeGripEnabled(False)
         self.buttons = QtWidgets.QDialogButtonBox(OFDSDedupToolDialog)
-        self.buttons.setGeometry(QtCore.QRect(50, 260, 341, 32))
+        self.buttons.setGeometry(QtCore.QRect(220, 340, 341, 32))
         self.buttons.setOrientation(QtCore.Qt.Horizontal)
         self.buttons.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.buttons.setObjectName("buttons")
-        self.canvas = gui.QgsMapCanvas(OFDSDedupToolDialog)
-        self.canvas.setGeometry(QtCore.QRect(10, 10, 381, 241))
-        self.canvas.setObjectName("canvas")
+        self.canvas_left = gui.QgsMapCanvas(OFDSDedupToolDialog)
+        self.canvas_left.setGeometry(QtCore.QRect(10, 10, 451, 281))
+        self.canvas_left.setObjectName("canvas_left")
+        self.canvas_right = gui.QgsMapCanvas(OFDSDedupToolDialog)
+        self.canvas_right.setGeometry(QtCore.QRect(490, 10, 441, 281))
+        self.canvas_right.setObjectName("canvas_right")
+        self.canvas_left.raise_()
+        self.buttons.raise_()
+        self.canvas_right.raise_()
 
         self.retranslateUi(OFDSDedupToolDialog)
         self.buttons.accepted.connect(OFDSDedupToolDialog.accept) # type: ignore
