@@ -4,14 +4,14 @@ A tool to consolidate multiple data sets formatted using the Open Fibre Data Sta
 
 ## Development Environment
 
-## Setup
-
-### Developing the QGIS Plugin
+## Developing the QGIS Plugin
 
 Handy links to look at:
 
 - https://www.qgistutorials.com/en/docs/3/building_a_python_plugin.html
 - https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/index.html#developing-python-plugins
+
+### Setup
 
 Tools you'll need:
 
@@ -48,3 +48,17 @@ export PYTHONPATH="$PYTHONPATH:/usr/share/qgis/python/plugins:/usr/share/qgis/py
 ```
 
 See: https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#a-note-on-configuring-your-ide-on-linux-and-windows
+
+### Installing the plugin
+
+In QGIS, go to `Plugins > Manage and Install Plugins`. Search for 'odfs', and activate our plugin in the list. A button should appear on the menu that says "Consolidate OFDS".
+
+When you make changes to the plugin code, you can reload the plugin using `Plugins > Plugin Reloader` (the first time, configure it to reload the ofds_consolidation_tool plugin. After that you can use ctrl+F5).
+
+### UI changes
+
+You can open the `gui.ui` file in Qt5 Designer to make changes to the UI. After each change, run:
+
+```
+pyuic5 gui.ui > gui.py
+```
