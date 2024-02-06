@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 
 from PyQt5.QtWidgets import QAction, QMessageBox, QWidget, QDialog
@@ -14,6 +15,7 @@ from qgis.gui import (
 from .gui import Ui_OFDSDedupToolDialog
 
 DATA_PATH = Path(os.environ.get("OFDS_DATA_PATH")) / "brazil_network_spans.geojson"
+logger = logging.getLogger(__name__)
 
 class OFDSDedupToolDialog(QDialog):
     def __init__(self):
@@ -21,6 +23,7 @@ class OFDSDedupToolDialog(QDialog):
 
         self.ui = Ui_OFDSDedupToolDialog()
         self.ui.setupUi(self)
+
 
 class OFDSDedupPlugin:
     def __init__(self, iface):
@@ -39,7 +42,6 @@ class OFDSDedupPlugin:
     def run(self):
         logger.info("Running OFDS Consolidation plugin")
 
-        print("Running OFDS Consolidation plugin")
         self.tool_dialog.show()
 
         osm_tms = "type=xyz&url=https://tile.openstreetmap.org/{z}/{x}/{y}.png&zmax=19&zmin=0&http-header:referer="
