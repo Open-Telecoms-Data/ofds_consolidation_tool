@@ -15,15 +15,16 @@ Handy links to look at:
 
 Tools you'll need:
  * QGIS 3.28+
- * Qt5 Designer
- * `pyuic5` tool
+ * Qt5 Dev Tools, which should include:
+   * Qt5 Designer
+   * `pyuic5` tool
 
 You'll need to symlink your project directory into QGIS's local plugins directory, making the directory if it doesn't already exist, i.e.:
 
 ```bash
 QGIS_PLUGINS_DIR="$HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins"
 mkdir -p "$QGIS_PLUGINS_DIR"
-ln -s ofds-dedup-tool/  "$QGIS_PLUGINS_DIR/ofds-dedup/"
+ln -s "$PWD/ofds-consolidation-tool/"  "$QGIS_PLUGINS_DIR/ofds-consolidation-tool/"
 ```
 
 There are a couple of useful helper plugins for developing your plugin, `Plugin Reloader` and `First Aid`, see: https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#useful-plugins-for-writing-python-plugins
