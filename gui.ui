@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>950</width>
-    <height>591</height>
+    <width>943</width>
+    <height>517</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,10 +19,10 @@
   <widget class="QDialogButtonBox" name="buttons">
    <property name="geometry">
     <rect>
-     <x>220</x>
-     <y>340</y>
-     <width>341</width>
-     <height>32</height>
+     <x>770</x>
+     <y>470</y>
+     <width>166</width>
+     <height>36</height>
     </rect>
    </property>
    <property name="orientation">
@@ -32,29 +32,166 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QgsMapCanvas" name="canvas_left" native="true">
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>6</x>
+     <y>6</y>
+     <width>931</width>
+     <height>122</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="selectFormsLayout">
+    <item>
+     <widget class="QGroupBox" name="groupBoxA">
+      <property name="title">
+       <string>Network A</string>
+      </property>
+      <layout class="QFormLayout" name="selectFormA">
+       <item row="0" column="0">
+        <widget class="QLabel" name="nodesLabelA">
+         <property name="text">
+          <string>Nodes</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="nodesComboBoxA"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="spansLabelA">
+         <property name="text">
+          <string>Spans</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="spansComboBoxA"/>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="groupBoxB">
+      <property name="title">
+       <string>Network B</string>
+      </property>
+      <layout class="QFormLayout" name="selectFormB">
+       <item row="0" column="0">
+        <widget class="QLabel" name="nodesLabelB">
+         <property name="text">
+          <string>Nodes</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QComboBox" name="nodesComboBoxB"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="spansLabelB">
+         <property name="text">
+          <string>Spans</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="spansComboBoxB"/>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>10</y>
-     <width>451</width>
+     <y>170</y>
+     <width>921</width>
      <height>281</height>
     </rect>
    </property>
+   <layout class="QHBoxLayout" name="mapsLayout">
+    <item>
+     <widget class="QgsMapCanvas" name="mapA" native="true"/>
+    </item>
+    <item>
+     <widget class="QgsMapCanvas" name="mapB" native="true"/>
+    </item>
+   </layout>
   </widget>
-  <widget class="QgsMapCanvas" name="canvas_right" native="true">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>490</x>
-     <y>10</y>
-     <width>441</width>
-     <height>281</height>
+     <x>6</x>
+     <y>120</y>
+     <width>931</width>
+     <height>38</height>
     </rect>
    </property>
+   <layout class="QHBoxLayout" name="startLayout">
+    <item>
+     <widget class="QPushButton" name="startButton">
+      <property name="maximumSize">
+       <size>
+        <width>100</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Start</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Nodes</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="nodesProgressBar">
+      <property name="minimum">
+       <number>0</number>
+      </property>
+      <property name="maximum">
+       <number>1</number>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+      <property name="format">
+       <string>%v of %m</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Spans</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="spansProgressBar">
+      <property name="maximum">
+       <number>1</number>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+      <property name="format">
+       <string>%v of %m</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
-  <zorder>canvas_left</zorder>
+  <zorder>layoutWidget</zorder>
   <zorder>buttons</zorder>
-  <zorder>canvas_right</zorder>
+  <zorder>layoutWidget</zorder>
+  <zorder>layoutWidget</zorder>
  </widget>
  <customwidgets>
   <customwidget>
@@ -73,8 +210,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>34</x>
+     <y>549</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -89,8 +226,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>102</x>
+     <y>549</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

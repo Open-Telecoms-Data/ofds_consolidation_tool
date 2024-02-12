@@ -1,28 +1,13 @@
-import os
+import sys
 import logging
-from pathlib import Path
 
-from PyQt5.QtWidgets import QAction, QMessageBox, QWidget, QDialog
-from PyQt5.QtCore import QRect
-from qgis.core import QgsVectorLayer, QgsRasterLayer
-from qgis.gui import (
-    QgsMapCanvas,
-    QgsVertexMarker,
-    QgsMapCanvasItem,
-    QgsMapMouseEvent,
-    QgsRubberBand,
-)
-from .gui import Ui_OFDSDedupToolDialog
+from PyQt5.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
+from PyQt5.QtWidgets import QAction
+from qgis.core import QgsProject, QgsMapLayer
 
-DATA_PATH = Path(os.environ.get("OFDS_DATA_PATH")) / "brazil_network_spans.geojson"
+from .tool import OFDSDedupToolDialog
+
 logger = logging.getLogger(__name__)
-
-class OFDSDedupToolDialog(QDialog):
-    def __init__(self):
-        super().__init__()
-
-        self.ui = Ui_OFDSDedupToolDialog()
-        self.ui.setupUi(self)
 
 
 class OFDSDedupPlugin:
@@ -40,16 +25,14 @@ class OFDSDedupPlugin:
         del self.action
 
     def run(self):
-        logger.info("Running OFDS Consolidation plugin")
+        logger.debug("Running OFDS Consolidation plugin")
+        logger.debug(
+            f"Qt: v{QT_VERSION_STR} PyQt: v{PYQT_VERSION_STR} Python: {sys.version}"
+        )
 
+        project = QgsProject.instance()
+        if not project:
+            raise Exception
+
+        self.tool_dialog.reset(project=project)
         self.tool_dialog.show()
-
-        osm_tms = "type=xyz&url=https://tile.openstreetmap.org/{z}/{x}/{y}.png&zmax=19&zmin=0&http-header:referer="
-        osm_layer = QgsRasterLayer(osm_tms, "OSM", "wms")
-
-        vlayer = QgsVectorLayer(DATA_PATH.as_posix(), "Kenya Spans", "ogr")
-
-        canvas_left = self.tool_dialog.ui.canvas_left
-
-        canvas_left.setExtent(vlayer.extent())
-        canvas_left.setLayers([vlayer, osm_layer])
