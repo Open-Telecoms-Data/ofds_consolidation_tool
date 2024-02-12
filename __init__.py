@@ -17,6 +17,11 @@ def classFactory(iface):
     )
     handler.setFormatter(formatter)
 
+    for old_handler in logger.handlers:
+        # When we reload the plugin it creates and adds the handler again
+        # so remove old handlers from past plugin loads.
+        logger.removeHandler(old_handler)
+
     logger.addHandler(handler)
 
     return OFDSDedupPlugin(iface)
