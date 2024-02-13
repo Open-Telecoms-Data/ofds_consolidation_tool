@@ -1,8 +1,9 @@
-from enum import Enum
 from typing import List, Optional, cast
 
 import logging
+import json
 
+from enum import Enum
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QDialog
 from qgis.core import (
@@ -157,9 +158,17 @@ class OFDSDedupToolDialog(QDialog):
         logger.debug("Not Same button clicked")
 
     def compareNodes(self, a: Node, b: Node):
+        """
+        This method is called when we are ready to compare new new nodes.
+        It updates the UI with info relevent to the new comparison.
+        """
         logger.info(f"Comparing Nodes {a} <-> {b}")
         self.mapA.zoomToNodeId(a.featureId)
         self.mapB.zoomToNodeId(b.featureId)
+        self.mapA.nodesLayer.selectByIds([a.featureId])
+        self.mapB.nodesLayer.selectByIds([b.featureId])
+        self.ui.infoPanelA.setPlainText(json.dumps(a.data, indent=2))
+        self.ui.infoPanelB.setPlainText(json.dumps(b.data, indent=2))
 
     def populateSelectionDropdowns(self, project: QgsProject):
         # Find all the layers the user has loaded
