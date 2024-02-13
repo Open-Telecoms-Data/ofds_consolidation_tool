@@ -1,9 +1,9 @@
 from qgis.core import (
-    QgsVectorLayer,
-    QgsProject,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
     QgsMapLayer,
+    QgsProject,
+    QgsVectorLayer,
 )
 from qgis.gui import QgsMapCanvas
 

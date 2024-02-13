@@ -1,24 +1,23 @@
+import json
+import logging
+from enum import Enum
 from typing import List, Optional, cast
 
-import logging
-import json
-
-from enum import Enum
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QDialog
 from qgis.core import (
+    QgsCoordinateReferenceSystem,
     QgsMapLayer,
     QgsMapLayerType,
-    QgsVectorLayer,
-    QgsRasterLayer,
     QgsProject,
-    QgsCoordinateReferenceSystem,
+    QgsRasterLayer,
+    QgsVectorLayer,
 )
 
 from .comparisons import FindNearestNodeComparison
 from .gui import Ui_OFDSDedupToolDialog
+from .helpers import MapController, isQgsMapLayerOFDS
 from .models import Network, Node
-from .helpers import isQgsMapLayerOFDS, MapController
 
 logger = logging.getLogger(__name__)
 
