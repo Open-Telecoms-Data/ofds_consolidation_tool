@@ -163,8 +163,8 @@ class OFDSDedupToolDialog(QDialog):
         It updates the UI with info relevent to the new comparison.
         """
         logger.info(f"Comparing Nodes {a} <-> {b}")
-        self.mapA.zoomToNodeId(a.featureId)
-        self.mapB.zoomToNodeId(b.featureId)
+        self.mapA.zoomToNodeByFeatureId(a.featureId)
+        self.mapB.zoomToNodeByFeatureId(b.featureId)
         self.mapA.nodesLayer.selectByIds([a.featureId])
         self.mapB.nodesLayer.selectByIds([b.featureId])
         self.ui.infoPanelA.setPlainText(json.dumps(a.data, indent=2))
