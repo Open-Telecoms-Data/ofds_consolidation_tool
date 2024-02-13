@@ -47,6 +47,8 @@ class OFDSDedupToolDialog(QDialog):
         self.ui = Ui_OFDSDedupToolDialog()
         self.ui.setupUi(self)
         self.ui.startButton.clicked.connect(self.onNetworksSelected)
+        self.ui.sameButton.clicked.connect(self.onSameButtonClicked)
+        self.ui.notSameButton.clicked.connect(self.onNotSameButtonClicked)
 
         self._osm_layer = None
 
@@ -72,6 +74,12 @@ class OFDSDedupToolDialog(QDialog):
         logger.info(f"Changing State {self._ui_state} -> {state}")
         self._ui_state = state
         self._setUiSelectionEnabled(self._ui_state == ToolUIState.READY_FOR_SELECTION)
+        is_consolidating: bool = (
+            self._ui_state == ToolUIState.CONSOLIDATING_NODES
+            or self._ui_state == ToolUIState.CONSOLIDATING_SPANS
+        )
+        self.ui.sameButton.setEnabled(is_consolidating)
+        self.ui.notSameButton.setEnabled(is_consolidating)
 
     @property
     def osmLayer(self) -> QgsRasterLayer:
@@ -141,6 +149,12 @@ class OFDSDedupToolDialog(QDialog):
         ).findPotentialSameNodes()
 
         self.compareNodes(*self.nodeComparisonPairs.pop())
+
+    def onSameButtonClicked(self):
+        logger.debug("Same button clicked")
+
+    def onNotSameButtonClicked(self):
+        logger.debug("Not Same button clicked")
 
     def compareNodes(self, a: Node, b: Node):
         logger.info(f"Comparing Nodes {a} <-> {b}")
