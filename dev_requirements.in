@@ -1,0 +1,9 @@
+pytest>=8
+pytest-qgis
+pytest-cov
+flake8>=7
+flake8-qgis
+flake8-bugbear
+black>=24
+isort
+pip-tools
