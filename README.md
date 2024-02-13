@@ -62,3 +62,31 @@ You can open the `gui.ui` file in Qt5 Designer to make changes to the UI. After 
 ```
 pyuic5 gui.ui > gui.py
 ```
+
+### Commit Messages
+
+To enable automatic Semantic Versioning, please use [Angular-like commit convention](https://www.conventionalcommits.org/en/v1.0.0/#summary).
+
+To get started quickly, follow a structure like:
+
+```
+<type>(<scope>): Short description
+
+Long description
+```
+
+Where `<type>` is one of `feat` (minor version bump), `fix`
+(patch version bump) or `chore` (no version change, e.g. documentation changes).
+
+The `<scope>` is per-project, and up to us to decide what to use, e.g. `tool` for tool changes, `docs` for documentation changes, `gui` for pure GUI changes. Use more as needed/relevent. For example:
+
+```
+feat(tool): A new feature
+
+A longer description about this new feature and all it's
+wonderful new featurelets.
+```
+
+### Code Format
+
+Please format code with [Black](https://black.readthedocs.io/en/stable/) formatter/convention.
