@@ -48,21 +48,26 @@ class MapController:
         self.mapCanvas.setDestinationCrs(self.displayCrs)
         self.mapCanvas.setLayers([self.nodesLayer, self.spansLayer, self.osmLayer])
 
-    def zoomToNodeId(self, nodeId):
-        # TODO: this is just a guess as to how to implement, not tried nor tested
-        #       may need to lookup OFDS NodeId to QGIS FeatureId first.
+    def zoomToNodeByFeatureId(self, nodeId):
+        """
+        Display the given node and surrounding area.
+        """
         self.mapCanvas.zoomToFeatureIds(self.nodesLayer, [nodeId])
         # We need to "refresh" i.e. re-render the map after every time we make changes
         self.mapCanvas.refresh()
 
-    def zoomToSpanId(self, spanId):
-        # TODO: this is just a guess as to how to implement, not tried nor tested
-        #       may need to lookup OFDS SpanId to QGIS FeatureId first.
+    def zoomToSpanByFeatureId(self, spanId):
+        """
+        Display the given span and surrounding area.
+        """
         self.mapCanvas.zoomToFeatureIds(self.nodesLayer, [spanId])
         # We need to "refresh" i.e. re-render the map after every time we make changes
         self.mapCanvas.refresh()
 
     def zoomToEverything(self):
+        """
+        Display the whole layer at once. Probably not that useful, nice for testing maps though.
+        """
         extentInSourceCrs = self.nodesLayer.extent()
         extentInDisplayCrs = self.transform.transformBoundingBox(extentInSourceCrs)
         self.mapCanvas.zoomToFeatureExtent(extentInDisplayCrs)
