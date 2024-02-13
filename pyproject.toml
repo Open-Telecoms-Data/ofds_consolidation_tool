@@ -1,2 +1,52 @@
+[project]
+name = "ofds-consolidation-tool"
+version = "0.1.0"
+requires-python = ">=3.8"
+
+authors = [
+    {name = "ODSC", email = "code@opendataservices.coop"}
+]
+description = "A tool to consolidate multiple fibre network datasets formatted using the Open Fibre Data Standard"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["open", "fibre", "data", "standard", "ofds", "consolidation", "tool", "gis", "qgis"]
+
+# See: https://pypi.org/classifiers/
+classifiers = [
+    # Development Status
+    "Development Status :: 2 - Pre-Alpha",
+
+    # Environment
+    "Environment :: Plugins",
+
+    # Indicate who your project is intended for
+    "Intended Audience :: Telecommunications Industry",
+    "Topic :: Desktop Environment",
+    "Topic :: Scientific/Engineering :: GIS",
+
+    # License
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+
+    # Specify the Python versions you support here.
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.urls]
+Repository = "https://github.com/Open-Telecoms-Data/ofds_consolidation_tool"
+
+[tool.pytest.ini_options]
+addopts = "-v --tb=short --cov=."
+testpaths = [
+    "tests"
+]
+
 [tool.black]
 line-length = 88
+
+[tool.isort]
+# https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html#isort
+profile = "black"

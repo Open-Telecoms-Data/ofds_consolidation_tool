@@ -27,6 +27,8 @@ sudo apt install qgis-dev # Ubuntu
 sudo dnf install qgis-devel # Fedora
 ```
 
+### Enabling & Running the plugin in QGIS
+
 You'll need to symlink your project directory into QGIS's local plugins directory, making the directory if it doesn't already exist, i.e.:
 
 From within the project git repo/directory:
@@ -48,8 +50,6 @@ export PYTHONPATH="$PYTHONPATH:/usr/share/qgis/python/plugins:/usr/share/qgis/py
 ```
 
 See: https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#a-note-on-configuring-your-ide-on-linux-and-windows
-
-### Installing the plugin
 
 In QGIS, go to `Plugins > Manage and Install Plugins`. Search for 'odfs', and activate our plugin in the list. A button should appear on the menu that says "Consolidate OFDS".
 
@@ -90,3 +90,28 @@ wonderful new featurelets.
 ### Code Format
 
 Please format code with [Black](https://black.readthedocs.io/en/stable/) formatter/convention.
+
+### Dev tools virtual environment
+
+Dev tools i.e. pytest are installed in a virtual environment, but we still need access to the global python environment to access QGIS's PyQGIS libraries. To do this, create the venv with additional access to system packages:
+
+```bash
+python -m venv --system-site-packages .venv
+```
+
+Then activate the virtualenv, and install dev tools:
+
+```bash
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r dev_requirements.txt
+```
+
+#### Updating dev tools
+
+To update dev tools, edit `dev_requirements.in` with any changes needed, then use `pip-compile` to update the pinned versions, and finally upgrade the venv:
+
+```bash
+pip-compile requirements_dev.in
+python -m pip install --upgrade -r dev_requirements.txt
+```
