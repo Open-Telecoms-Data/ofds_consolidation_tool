@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import Enum
 from typing import List, Optional, cast
 
 import logging
@@ -22,7 +22,7 @@ from .helpers import isQgsMapLayerOFDS, MapController
 logger = logging.getLogger(__name__)
 
 
-class ToolUIState(StrEnum):
+class ToolUIState(str, Enum):
     READY_FOR_SELECTION = "READY_FOR_SELECTION"
     CONSOLIDATING_NODES = "CONSOLIDATING_NODES"
     CONSOLIDATING_SPANS = "CONSOLIDATING_SPANS"
