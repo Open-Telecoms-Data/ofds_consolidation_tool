@@ -1,5 +1,6 @@
 from typing import Any, Dict, List
-from qgis.core import QgsVectorLayer, QgsFeature, QgsSpatialIndex, QgsWkbTypes
+
+from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
 
 
 class OFDSInvalidFeature(Exception):
