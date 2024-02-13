@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 class ToolUIState(str, Enum):
+    """
+    Each state represents one of the stages in the UI.
+    """
+
     READY_FOR_SELECTION = "READY_FOR_SELECTION"
     CONSOLIDATING_NODES = "CONSOLIDATING_NODES"
     CONSOLIDATING_SPANS = "CONSOLIDATING_SPANS"
@@ -31,14 +35,26 @@ class ToolUIState(str, Enum):
 
 
 class OFDSDedupToolDialog(QDialog):
+    """
+    The top-level GUI element, the Dialog box that holds all our other sub-elements.
+
+    Note that there is a singleton instance of this class, it isn't created/destroyed
+    each time we open the tool, but it remains constantly "open" in the backgroud even
+    when closed or hidden, and all state is still the same next time the tool is opened
+    from the toolbar. This means it's important to properly tidy up the GUI and any
+    created/opened resources when we're done.
+    """
+
     ui: Ui_OFDSDedupToolDialog
     _ui_state: ToolUIState
     _osm_layer: Optional[QgsRasterLayer]
     _project: QgsProject
 
-    # Display our data on the embedded maps in the Web Mercator CRS (aka EPSG 3857), as used by OpenStreetMap.
+    # Display our data on the embedded maps in the Web Mercator CRS (aka EPSG 3857),
+    # as used by OpenStreetMap.
     # https://epsg.io/3857
     EPSG3857 = QgsCoordinateReferenceSystem("EPSG:3857")
+    # WGS84 as used by GeoJson https://epsg.io/4326
     EPSG4328 = QgsCoordinateReferenceSystem("EPSG:4326")
     DISPLAY_CRS = EPSG3857
 
