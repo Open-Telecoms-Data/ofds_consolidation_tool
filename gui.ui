@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>943</width>
-    <height>517</height>
+    <width>947</width>
+    <height>965</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>770</x>
-     <y>470</y>
+     <y>910</y>
      <width>166</width>
      <height>36</height>
     </rect>
@@ -188,10 +188,72 @@
     </item>
    </layout>
   </widget>
+  <widget class="QPushButton" name="sameButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>790</y>
+     <width>141</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Equivelant</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="notSameButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>830</y>
+     <width>141</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Not Equivelant</string>
+   </property>
+  </widget>
+  <widget class="QPlainTextEdit" name="infoPanelA">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>460</y>
+     <width>461</width>
+     <height>301</height>
+    </rect>
+   </property>
+   <property name="undoRedoEnabled">
+    <bool>false</bool>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPlainTextEdit" name="infoPanelB">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>460</y>
+     <width>461</width>
+     <height>301</height>
+    </rect>
+   </property>
+   <property name="undoRedoEnabled">
+    <bool>false</bool>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>layoutWidget</zorder>
   <zorder>buttons</zorder>
   <zorder>layoutWidget</zorder>
   <zorder>layoutWidget</zorder>
+  <zorder>sameButton</zorder>
+  <zorder>notSameButton</zorder>
+  <zorder>infoPanelA</zorder>
+  <zorder>infoPanelB</zorder>
  </widget>
  <customwidgets>
   <customwidget>
