@@ -1,36 +1,75 @@
-from abc import ABC, abstractmethod
-from typing import Set, Tuple
+from dataclasses import dataclass
+from typing import Generic, Optional, Set, Tuple, TypeVar
 
 from .models import Network, Node, Span
 
 
-class AbstractNetworkComparison(ABC):
-    def __init__(self, networkA: Network, networkB: Network):
-        self.networkA = networkA
-        self.networkB = networkB
+@dataclass(frozen=True)
+class ComparisonReason:
+    """
+    Description of the reason for two features to be compaired.
+    """
 
-    @abstractmethod
-    def findPotentialSameNodes(self) -> Set[Tuple[Node, Node]]: ...
+    # Short slug name
+    short_name: str
 
-    @abstractmethod
-    def findPotentialSameSpans(self) -> Set[Tuple[Span, Span]]: ...
+    # Human readable description
+    description: str
 
-
-class FindNearestNodeComparison(AbstractNetworkComparison):
-
-    def findPotentialSameNodes(self) -> Set[Tuple[Node, Node]]:
-        nearestNodes = set()
-
-        for aNode in self.networkA.nodes:
-            bNodeId = self.networkB.nodesSpacialIndex.nearestNeighbor(
-                aNode.feature.geometry().asPoint(), 1
-            )[0]
-            nearestNodes.add((aNode, self.networkB.nodesByFeatureId[bNodeId]))
-
-        return nearestNodes
-
-    def findPotentialSameSpans(self) -> Set[Tuple[Span, Span]]:
-        return set()
+    # Optional confidence score between 0 and 1
+    confidence: Optional[float] = None
 
 
-COMPARISON_CLASSES = [FindNearestNodeComparison]
+FT = TypeVar("FT", Node, Span)
+
+
+@dataclass(frozen=True)
+class GenericFeatureComparison(Generic[FT]):
+    features: Tuple[FT, FT]
+    reason: ComparisonReason
+
+
+#
+# Nodes
+#
+
+NodeComparison = GenericFeatureComparison[Node]
+
+
+def compareNearestNodes(networkA: Network, networkB: Network) -> Set[NodeComparison]:
+    reason = ComparisonReason(
+        short_name="NEAREST_NODE",
+        description="For each node in network A, find the nearest node in network B.",
+    )
+
+    comparisons: Set[NodeComparison] = set()
+
+    for aNode in networkA.nodes:
+        bNodeId = networkB.nodesSpacialIndex.nearestNeighbor(
+            aNode.feature.geometry().asPoint(), 1
+        )[0]
+        comparisons.add(
+            NodeComparison(
+                features=(aNode, networkB.nodesByFeatureId[bNodeId]), reason=reason
+            )
+        )
+
+    return comparisons
+
+
+def compareNodes(networkA: Network, networkB: Network) -> Set[NodeComparison]:
+    """
+    Return a set of NodeComparisons based on all available heuristics.
+    """
+
+    # So far just nearest nodes
+    return compareNearestNodes(networkA, networkB)
+
+
+#
+# Spans
+#
+
+SpanComparison = GenericFeatureComparison[Span]
+
+# TODO

@@ -1,20 +1,23 @@
-from typing import List, Optional, Tuple, Union, cast
+import logging
+from typing import List, Optional, Tuple, Union
 import json
 from dataclasses import dataclass
 from PyQt5.QtWidgets import QPlainTextEdit, QPushButton, QWidget, QComboBox
-from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsMapLayerType
+from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
 from qgis.gui import QgsMapCanvas
 
 from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer
-from ..models import FeaturePairComparisonOutcome, Node, Span, FeatureType
+from ..models import FeatureComparisonOutcome, Node, Span, FeatureType
 from .state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
     ToolSpanComparisonState,
     ToolState,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InvalidViewState(Exception):
@@ -40,7 +43,7 @@ class MiniMapView:
     # https://epsg.io/3857
     DISPLAY_CRS = EPSG3857
 
-    @dataclass
+    @dataclass(frozen=True)
     class State:
         """The state to pass to MiniMapView.update"""
 
@@ -49,7 +52,7 @@ class MiniMapView:
         featureId: int
         featureType: FeatureType
 
-    @dataclass
+    @dataclass(frozen=True)
     class Layers:
         nodesLayer: QgsVectorLayer
         spansLayer: QgsVectorLayer
@@ -68,9 +71,23 @@ class MiniMapView:
         self.mapCanvas.enableAntiAliasing(True)
         self.mapCanvas.setDestinationCrs(self.DISPLAY_CRS)
 
+    def _zoomToEverything(self):
+        if not self.layers:
+            raise InvalidViewState
+
+        transform = QgsCoordinateTransform(
+            self.layers.nodesLayer.crs(), self.DISPLAY_CRS, QgsProject.instance()
+        )
+        extentInSourceCrs = self.layers.nodesLayer.extent()
+        extentInDisplayCrs = transform.transformBoundingBox(extentInSourceCrs)
+        self.mapCanvas.zoomToFeatureExtent(extentInDisplayCrs)
+        # We need to "refresh" i.e. re-render the map after every time we make changes
+        self.mapCanvas.refresh()
+
     def update(self, state: Optional[State]):
         if state is None:
             # Nothing to display, so display nothing
+            logger.info("RESET MAP")
             self.layers = None
             self.mapCanvas.setLayers([])
             self.mapCanvas.refresh()
@@ -85,7 +102,10 @@ class MiniMapView:
             self.mapCanvas.setLayers(
                 [self.layers.nodesLayer, self.layers.spansLayer, self.backgroundLayer]
             )
+            logger.info(f"MiniMap has new {self.mapCanvas.layers()=}")
+            self._zoomToEverything()
 
+        # Check to make sure the layers haven't change for some reason
         if (
             state.nodesLayer != self.layers.nodesLayer
             or state.spansLayer != self.layers.spansLayer
@@ -165,32 +185,30 @@ class LayerSelectView:
         self.spansComboBoxes = spansComboBoxes
         self.startButton = startButton
 
-    def _populateSelectionDropdowns(self, project: QgsProject):
-        # Find all the layers the user has loaded
-        layers: List[QgsMapLayer] = project.mapLayers(validOnly=True).values()
-
+    def _populateSelectionDropdowns(self, layers: List[QgsVectorLayer]):
         # Populate the drop-down boxes (aka ComboBox) with the layers loaded into the project
-        vector_layers: List[QgsVectorLayer] = list()
-        for layer in layers:
-            # only vector layers can be valid OFDS layers
-            # TODO: test that each layer is a OFDS layer first? maybe display all but disable non-OFDS layers?
-            if layer.type() == QgsMapLayerType.VectorLayer:
-                vector_layers.append(cast(QgsVectorLayer, layer))
-
         for ncb in self.nodesComboBoxes:
             ncb.clear()
-            ncb.addItem(layer.name(), layer)
+            for layer in layers:
+                ncb.addItem(layer.name(), layer)
 
         for scb in self.spansComboBoxes:
             scb.clear()
-            scb.addItem(layer.name(), layer)
+            for layer in layers:
+                scb.addItem(layer.name(), layer)
 
     def update(self, state: ToolState):
         """
         Enable/Disable all the layer selection drop-down boxes and start button.
         We don't want the user to change layers in the middle of the process!
         """
-        enable_layer_select = isinstance(state, ToolLayerSelectState)
+        if isinstance(state, ToolLayerSelectState):
+            self._populateSelectionDropdowns(state.selectableLayers)
+            enable_layer_select = True
+        else:
+            enable_layer_select = False
+
+        # Set the Enabled/Disabled state for our widgets
         for widget in self.nodesComboBoxes:
             widget.setEnabled(enable_layer_select)
 
@@ -242,14 +260,14 @@ class ComparisonView:
                 MiniMapView.State(
                     nodesLayer=state.networks[i].nodesLayer,
                     spansLayer=state.networks[i].spansLayer,
-                    featureId=state.currentPair[i].featureId,
-                    featureType=state.currentPair[i].featureType,
+                    featureId=state.currentComparison.features[i].featureId,
+                    featureType=state.currentComparison.features[i].featureType,
                 )
             )
 
-            self.infoPanelViews[i].update(state.currentPair[i])
+            self.infoPanelViews[i].update(state.currentComparison.features[i])
 
-        outcome: Optional[FeaturePairComparisonOutcome] = state.currentOutcome
+        outcome: Optional[FeatureComparisonOutcome] = state.currentOutcome
         if outcome is None:
             self.sameButton.setEnabled(True)
             self.notSameButton.setEnabled(True)

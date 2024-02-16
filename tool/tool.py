@@ -9,7 +9,7 @@ from qgis.core import (
 from ..gui import Ui_OFDSDedupToolDialog
 
 from .control import ToolController
-from .state import ToolLayerSelectState, ToolState
+from .state import ToolState
 from .view import ToolView
 
 
@@ -44,6 +44,7 @@ class OFDSDedupToolDialog(QDialog):
         self.ui.startButton.clicked.connect(self.onStartButtonClicked)
         self.ui.sameButton.clicked.connect(self.onSameButtonClicked)
         self.ui.notSameButton.clicked.connect(self.onNotSameButtonClicked)
+        self.ui.buttons.clicked.connect(self.onOkCancelButtonClicked)
 
     def reset(self, project: QgsProject):
         """
@@ -51,12 +52,12 @@ class OFDSDedupToolDialog(QDialog):
         """
         self.project = project
 
-        # Set initial state
-        self.state = ToolLayerSelectState()
-
         # Setup MVC
-        self.controller = ToolController(self.ui)
+        self.controller = ToolController(self.project, self.ui)
         self.view = ToolView(self.project, self.ui)
+
+        # Set initial state
+        self.update(self.controller.onInit())
 
     def update(self, state: ToolState):
         self.state = state
@@ -73,6 +74,10 @@ class OFDSDedupToolDialog(QDialog):
     def onNotSameButtonClicked(self):
         logger.debug("Not Same button clicked")
         self.update(self.controller.onNotSameButton(self.state))
+
+    def onOkCancelButtonClicked(self):
+        logger.debug("OK or Cancel button clicked")
+        self.reset(self.project)
 
 
 class Worker(QThread):

@@ -1,8 +1,14 @@
 from typing import ClassVar, TypeVar, Generic, List, Union, Tuple
 from enum import Enum
-from dataclasses import dataclass, field
 
-from ..models import Feature, FeaturePairComparisonOutcome, Network, Node, Span
+from qgis.core import QgsVectorLayer
+
+from ..comparisons import GenericFeatureComparison
+from ..models import FeatureComparisonOutcome, Network, Node, Span
+
+
+class ToolInvalidState(Exception):
+    pass
 
 
 class ToolStateEnum(str, Enum):
@@ -11,7 +17,9 @@ class ToolStateEnum(str, Enum):
     """
 
     READY_FOR_SELECTION = "READY_FOR_SELECTION"
+    GATHERING_NODE_COMPARISONS = "GATHERING_NODE_COMPARISONS"
     CONSOLIDATING_NODES = "CONSOLIDATING_NODES"
+    GATHERING_SPAN_COMPARISONS = "GATHERING_SPAN_COMPARISONS"
     CONSOLIDATING_SPANS = "CONSOLIDATING_SPANS"
     OUTPUT = "OUTPUT"
 
@@ -22,33 +30,45 @@ class AbstractToolState:
 
 class ToolLayerSelectState(AbstractToolState):
     state = ToolStateEnum.READY_FOR_SELECTION
+    selectableLayers: List[QgsVectorLayer]
+
+    def __init__(self, selectableLayers: List[QgsVectorLayer]):
+        self.selectableLayers = selectableLayers
 
 
-FT = TypeVar("FT", bound=Feature)
+FT = TypeVar("FT", Node, Span)
 
 
-@dataclass
 class GenericToolComparisonState(Generic[FT], AbstractToolState):
     # Networks
     networks: Tuple[Network, Network]
 
-    # Features for consolidation consolidation
-    featurePairs: List[Tuple[FT, FT]]
+    # Features for consolidation comparison
+    comparisons: List[GenericFeatureComparison[FT]]
 
-    # Outcome for each pair,
-    # outcomes is a list the same length as featurePairs, with all values initially None
+    # Outcome for each comparison,
+    # outcomes is a list the same length as comparisons, with all values initially None
     # but updated as outcomes are input by the user.
-    outcomes: List[Union[None, FeaturePairComparisonOutcome]] = field(
-        default_factory=list
-    )
+    outcomes: List[Union[None, FeatureComparisonOutcome]]
 
     # Keep track of which pair we're looking at now
-    current: int = field(default=0)
+    current: int
 
-    def __post_init__(self):
+    def __init__(
+        self,
+        networks: Tuple[Network, Network],
+        comparisons: List[GenericFeatureComparison[FT]],
+    ):
+        if len(comparisons) < 1:
+            # FIXME: Is 0 comparisons ever valid? Should be allowed? Jump straight to output?
+            raise ToolInvalidState
+
+        self.networks = networks
+        self.comparisons = comparisons
+        self.current = 0
+
         # Create outcomes list the same length as featurePairs
-        if len(self.outcomes) != len(self.featurePairs):
-            self.outcomes = list(None for _ in self.featurePairs)
+        self.outcomes = list(None for _ in self.comparisons)
 
     def next(self):
         new_current = self.current + 1
@@ -64,18 +84,18 @@ class GenericToolComparisonState(Generic[FT], AbstractToolState):
 
     @property
     def nTotal(self) -> int:
-        return len(self.featurePairs)
+        return len(self.comparisons)
 
     @property
     def nCompared(self) -> int:
         return len([o for o in self.outcomes if o is not None])
 
     @property
-    def currentPair(self) -> Tuple[FT, FT]:
-        return self.featurePairs[self.current]
+    def currentComparison(self) -> GenericFeatureComparison[FT]:
+        return self.comparisons[self.current]
 
     @property
-    def currentOutcome(self) -> Union[None, FeaturePairComparisonOutcome]:
+    def currentOutcome(self) -> Union[None, FeatureComparisonOutcome]:
         return self.outcomes[self.current]
 
 
