@@ -1,11 +1,11 @@
-import sys
 import logging
+import sys
 
-from PyQt5.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
+from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
 from PyQt5.QtWidgets import QAction
-from qgis.core import QgsProject, QgsMapLayer
+from qgis.core import QgsProject
 
-from .tool import OFDSDedupToolDialog
+from .tool.tool import OFDSDedupToolDialog
 
 logger = logging.getLogger(__name__)
 

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>943</width>
-    <height>517</height>
+    <width>947</width>
+    <height>965</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
    <property name="geometry">
     <rect>
      <x>770</x>
-     <y>470</y>
+     <y>910</y>
      <width>166</width>
      <height>36</height>
     </rect>
@@ -144,14 +144,14 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="comparisonLabel">
       <property name="text">
-       <string>Nodes</string>
+       <string>Comparing Nodes</string>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QProgressBar" name="nodesProgressBar">
+     <widget class="QProgressBar" name="comparisonProgressBar">
       <property name="minimum">
        <number>0</number>
       </property>
@@ -166,32 +166,85 @@
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>Spans</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QProgressBar" name="spansProgressBar">
-      <property name="maximum">
-       <number>1</number>
-      </property>
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="format">
-       <string>%v of %m</string>
-      </property>
-     </widget>
-    </item>
    </layout>
+  </widget>
+  <widget class="QPushButton" name="sameButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>790</y>
+     <width>141</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Equivelant</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="notSameButton">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>830</y>
+     <width>141</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Not Equivelant</string>
+   </property>
+  </widget>
+  <widget class="QTextEdit" name="infoPanel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>460</y>
+     <width>921</width>
+     <height>301</height>
+    </rect>
+   </property>
+   <property name="undoRedoEnabled">
+    <bool>false</bool>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="nextButton">
+   <property name="geometry">
+    <rect>
+     <x>600</x>
+     <y>790</y>
+     <width>103</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Next &gt;</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="prevButton">
+   <property name="geometry">
+    <rect>
+     <x>250</x>
+     <y>790</y>
+     <width>103</width>
+     <height>36</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt; Prev</string>
+   </property>
   </widget>
   <zorder>layoutWidget</zorder>
   <zorder>buttons</zorder>
   <zorder>layoutWidget</zorder>
   <zorder>layoutWidget</zorder>
+  <zorder>sameButton</zorder>
+  <zorder>notSameButton</zorder>
+  <zorder>infoPanel</zorder>
+  <zorder>nextButton</zorder>
+  <zorder>prevButton</zorder>
  </widget>
  <customwidgets>
   <customwidget>
