@@ -82,6 +82,9 @@ class GenericToolComparisonState(Generic[FT], AbstractToolState):
             new_current = self.nTotal - 1
         self.current = new_current
 
+    def setOutcome(self, outcome: FeatureComparisonOutcome):
+        self.outcomes[self.current] = outcome
+
     @property
     def nTotal(self) -> int:
         return len(self.comparisons)
