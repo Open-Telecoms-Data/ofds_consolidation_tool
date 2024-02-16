@@ -116,6 +116,12 @@ class Ui_OFDSDedupToolDialog(object):
         self.infoPanelB.setUndoRedoEnabled(False)
         self.infoPanelB.setReadOnly(True)
         self.infoPanelB.setObjectName("infoPanelB")
+        self.nextButton = QtWidgets.QPushButton(OFDSDedupToolDialog)
+        self.nextButton.setGeometry(QtCore.QRect(600, 790, 103, 36))
+        self.nextButton.setObjectName("nextButton")
+        self.prevButton = QtWidgets.QPushButton(OFDSDedupToolDialog)
+        self.prevButton.setGeometry(QtCore.QRect(250, 790, 103, 36))
+        self.prevButton.setObjectName("prevButton")
         self.layoutWidget.raise_()
         self.buttons.raise_()
         self.layoutWidget.raise_()
@@ -124,6 +130,8 @@ class Ui_OFDSDedupToolDialog(object):
         self.notSameButton.raise_()
         self.infoPanelA.raise_()
         self.infoPanelB.raise_()
+        self.nextButton.raise_()
+        self.prevButton.raise_()
 
         self.retranslateUi(OFDSDedupToolDialog)
         self.buttons.accepted.connect(OFDSDedupToolDialog.accept) # type: ignore
@@ -146,4 +154,6 @@ class Ui_OFDSDedupToolDialog(object):
         self.spansProgressBar.setFormat(_translate("OFDSDedupToolDialog", "%v of %m"))
         self.sameButton.setText(_translate("OFDSDedupToolDialog", "Equivelant"))
         self.notSameButton.setText(_translate("OFDSDedupToolDialog", "Not Equivelant"))
+        self.nextButton.setText(_translate("OFDSDedupToolDialog", "Next >"))
+        self.prevButton.setText(_translate("OFDSDedupToolDialog", "< Prev"))
 from qgis import gui
