@@ -214,7 +214,7 @@
     <string>Not Equivelant</string>
    </property>
   </widget>
-  <widget class="QPlainTextEdit" name="infoPanelA">
+  <widget class="QTextEdit" name="infoPanelA">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -230,7 +230,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QPlainTextEdit" name="infoPanelB">
+  <widget class="QTextEdit" name="infoPanelB">
    <property name="geometry">
     <rect>
      <x>470</x>
