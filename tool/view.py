@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
 from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
 from qgis.gui import QgsMapCanvas
 
+from ..comparisons import NodeComparison, SpanComparison
 from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer, flatten
@@ -143,41 +144,47 @@ class InfoPanelView:
     def __init__(self, infoPanel: QTextEdit):
         self.infoPanel = infoPanel
 
-    def update(self, feature: Union[Node, Span, None]):
+    def update(self, comparison: Union[NodeComparison, SpanComparison, None]):
         """
-        Display the given Feature, or nothing.
+        Display the given Comparison, or nothing.
         """
-        if feature is None:
+        if comparison is None:
             # No feature to display, e.g. still selecting layers
             self.infoPanel.setHtml("")
             self.infoPanel.setEnabled(False)
+            return
+
+        # Display feature info
+        dataA = flatten(comparison.features[0].data)
+        dataB = flatten(comparison.features[1].data)
+        keys = sorted(list(set(dataA.keys()).union(dataB.keys())))
+        table = [(key, dataA.get(key), dataB.get(key)) for key in keys]
+
+        self.infoPanel.setEnabled(True)
+        if isinstance(comparison, NodeComparison):
+            # Display Node info
+            self.infoPanel.setHtml(
+                f"""
+                <table>
+                  <tr>
+                    <th>Attribute</th>
+                    <th>Value A</th>
+                    <th>Value B</th>
+                  </tr>
+                  {
+                      "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td></tr>" for k,va,vb in table)
+                  }
+                </table>
+                """
+            )
+
+        elif isinstance(comparison, Span):
+            # Display Span info
+            # TODO: make prettier. Maybe use non-plaintext
+            self.infoPanel.setHtml(json.dumps(comparison.data, indent=2))
 
         else:
-            # Display feature info
-            self.infoPanel.setEnabled(True)
-            if isinstance(feature, Node):
-                # Display Node info
-                self.infoPanel.setHtml(
-                    f"""
-                    <table>
-                      <tr>
-                        <th>Attribute</th>
-                        <th>Value</th>
-                      </tr>
-                      {
-                          "".join(f"<tr><td>{k}</td><td>{str(v)}</td></tr>" for k,v in flatten(feature.data).items())
-                      }
-                    </table>
-                    """
-                )
-
-            elif isinstance(feature, Span):
-                # Display Span info
-                # TODO: make prettier. Maybe use non-plaintext
-                self.infoPanel.setHtml(json.dumps(feature.data, indent=2))
-
-            else:
-                raise InvalidViewState
+            raise InvalidViewState
 
 
 #
@@ -243,7 +250,7 @@ class ComparisonView:
     """
 
     mapViews: Tuple[MiniMapView, MiniMapView]
-    infoPanelViews: Tuple[InfoPanelView, InfoPanelView]
+    infoPanelView: InfoPanelView
 
     sameButton: QPushButton
     notSameButton: QPushButton
@@ -258,7 +265,7 @@ class ComparisonView:
         self,
         project: QgsProject,
         canvases: Tuple[QgsMapCanvas, QgsMapCanvas],
-        infoPanels: Tuple[QTextEdit, QTextEdit],
+        infoPanel: QTextEdit,
         sameButton: QPushButton,
         notSameButton: QPushButton,
         nextButton: QPushButton,
@@ -271,10 +278,7 @@ class ComparisonView:
             MiniMapView(canvases[0], osmLayer),
             MiniMapView(canvases[1], osmLayer),
         )
-        self.infoPanelViews = (
-            InfoPanelView(infoPanels[0]),
-            InfoPanelView(infoPanels[1]),
-        )
+        self.infoPanelView = InfoPanelView(infoPanel)
         self.sameButton = sameButton
         self.notSameButton = notSameButton
         self.nextButton = nextButton
@@ -298,7 +302,7 @@ class ComparisonView:
                 )
             )
 
-            self.infoPanelViews[i].update(state.currentComparison.features[i])
+        self.infoPanelView.update(state.currentComparison)
 
         outcome: Optional[FeatureComparisonOutcome] = state.currentOutcome
         if outcome is None:
@@ -329,8 +333,7 @@ class ComparisonView:
         for mv in self.mapViews:
             mv.update(None)
 
-        for ipv in self.infoPanelViews:
-            ipv.update(None)
+        self.infoPanelView.update(None)
 
         self.sameButton.setEnabled(False)
         self.notSameButton.setEnabled(False)
@@ -374,7 +377,7 @@ class ToolView:
         self.comparisonView = ComparisonView(
             project=project,
             canvases=(ui.mapA, ui.mapB),
-            infoPanels=(ui.infoPanelA, ui.infoPanelB),
+            infoPanel=ui.infoPanel,
             sameButton=ui.sameButton,
             notSameButton=ui.notSameButton,
             nextButton=ui.nextButton,
