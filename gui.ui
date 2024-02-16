@@ -144,37 +144,17 @@
      </widget>
     </item>
     <item>
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="comparisonLabel">
       <property name="text">
-       <string>Nodes</string>
+       <string>Comparing Nodes</string>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QProgressBar" name="nodesProgressBar">
+     <widget class="QProgressBar" name="comparisonProgressBar">
       <property name="minimum">
        <number>0</number>
       </property>
-      <property name="maximum">
-       <number>1</number>
-      </property>
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="format">
-       <string>%v of %m</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>Spans</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QProgressBar" name="spansProgressBar">
       <property name="maximum">
        <number>1</number>
       </property>
