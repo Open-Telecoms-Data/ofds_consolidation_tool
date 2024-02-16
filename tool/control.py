@@ -6,7 +6,12 @@ from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 from ..comparisons import compareNodes, NodeComparison
 from ..gui import Ui_OFDSDedupToolDialog
 from ..models import Network
-from .state import ToolLayerSelectState, ToolNodeComparisonState, ToolState
+from .state import (
+    ToolLayerSelectState,
+    ToolNodeComparisonState,
+    ToolSpanComparisonState,
+    ToolState,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +78,25 @@ class ToolController:
         else:
             raise ControllerInvalidState
 
-    def onNextButton(self, state: ToolState) -> ToolState: ...
-    def onPrevButton(self, state: ToolState) -> ToolState: ...
+    def onNextButton(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
+            state.gotoNextComparison()
+            return state
+
+        else:
+            raise ControllerInvalidState
+
+    def onPrevButton(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
+            state.gotoPrevComparison()
+            return state
+
+        else:
+            raise ControllerInvalidState
+
     def onSameButton(self, state: ToolState) -> ToolState: ...
     def onNotSameButton(self, state: ToolState) -> ToolState: ...

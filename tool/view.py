@@ -229,6 +229,9 @@ class ComparisonView:
     sameButton: QPushButton
     notSameButton: QPushButton
 
+    nextButton: QPushButton
+    prevButton: QPushButton
+
     def __init__(
         self,
         project: QgsProject,
@@ -236,6 +239,8 @@ class ComparisonView:
         infoPanels: Tuple[QPlainTextEdit, QPlainTextEdit],
         sameButton: QPushButton,
         notSameButton: QPushButton,
+        nextButton: QPushButton,
+        prevButton: QPushButton,
     ):
         osmLayer = getOpenStreetMapLayer(project)
         self.mapViews = (
@@ -248,6 +253,8 @@ class ComparisonView:
         )
         self.sameButton = sameButton
         self.notSameButton = notSameButton
+        self.nextButton = nextButton
+        self.prevButton = prevButton
 
     def _updateComparing(
         self, state: Union[ToolNodeComparisonState, ToolSpanComparisonState]
@@ -276,6 +283,9 @@ class ComparisonView:
             self.sameButton.setEnabled(not outcome.areDuplicate)
             self.notSameButton.setEnabled(outcome.areDuplicate)
 
+        self.nextButton.setEnabled(True)
+        self.prevButton.setEnabled(True)
+
     def _updateNotComparing(self):
         """
         Disable comparison UI when comparison is not enabled e.g. we're still selecting
@@ -289,6 +299,9 @@ class ComparisonView:
 
         self.sameButton.setEnabled(False)
         self.notSameButton.setEnabled(False)
+
+        self.nextButton.setEnabled(False)
+        self.prevButton.setEnabled(False)
 
     def update(self, state: ToolState):
         if isinstance(state, ToolNodeComparisonState) or isinstance(
@@ -325,6 +338,8 @@ class ToolView:
             infoPanels=(ui.infoPanelA, ui.infoPanelB),
             sameButton=ui.sameButton,
             notSameButton=ui.notSameButton,
+            nextButton=ui.nextButton,
+            prevButton=ui.prevButton,
         )
 
     def update(self, state: ToolState):

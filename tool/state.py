@@ -70,13 +70,13 @@ class GenericToolComparisonState(Generic[FT], AbstractToolState):
         # Create outcomes list the same length as featurePairs
         self.outcomes = list(None for _ in self.comparisons)
 
-    def next(self):
+    def gotoNextComparison(self):
         new_current = self.current + 1
         if new_current >= self.nTotal:
             new_current = 0
         self.current = new_current
 
-    def prev(self):
+    def gotoPrevComparison(self):
         new_current = self.current - 1
         if self.current < 0:
             new_current = self.nTotal - 1

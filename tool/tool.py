@@ -44,6 +44,8 @@ class OFDSDedupToolDialog(QDialog):
         self.ui.startButton.clicked.connect(self.onStartButtonClicked)
         self.ui.sameButton.clicked.connect(self.onSameButtonClicked)
         self.ui.notSameButton.clicked.connect(self.onNotSameButtonClicked)
+        self.ui.nextButton.clicked.connect(self.onNextButtonClicked)
+        self.ui.prevButton.clicked.connect(self.onPrevButtonClicked)
         self.ui.buttons.clicked.connect(self.onOkCancelButtonClicked)
 
     def reset(self, project: QgsProject):
@@ -74,6 +76,12 @@ class OFDSDedupToolDialog(QDialog):
     def onNotSameButtonClicked(self):
         logger.debug("Not Same button clicked")
         self.update(self.controller.onNotSameButton(self.state))
+
+    def onNextButtonClicked(self):
+        self.update(self.controller.onNextButton(self.state))
+
+    def onPrevButtonClicked(self):
+        self.update(self.controller.onPrevButton(self.state))
 
     def onOkCancelButtonClicked(self):
         logger.debug("OK or Cancel button clicked")
