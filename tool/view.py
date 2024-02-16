@@ -2,13 +2,13 @@ import logging
 from typing import List, Optional, Tuple, Union
 import json
 from dataclasses import dataclass
-from PyQt5.QtWidgets import QPlainTextEdit, QPushButton, QWidget, QComboBox
+from PyQt5.QtWidgets import QTextEdit, QPushButton, QWidget, QComboBox
 from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
 from qgis.gui import QgsMapCanvas
 
 from ..gui import Ui_OFDSDedupToolDialog
 
-from ..helpers import EPSG3857, getOpenStreetMapLayer
+from ..helpers import EPSG3857, getOpenStreetMapLayer, flatten
 from ..models import FeatureComparisonOutcome, Node, Span, FeatureType
 from .state import (
     ToolLayerSelectState,
@@ -130,9 +130,9 @@ class MiniMapView:
 
 
 class InfoPanelView:
-    infoPanel: QPlainTextEdit
+    infoPanel: QTextEdit
 
-    def __init__(self, infoPanel: QPlainTextEdit):
+    def __init__(self, infoPanel: QTextEdit):
         self.infoPanel = infoPanel
 
     def update(self, feature: Union[Node, Span, None]):
@@ -141,7 +141,7 @@ class InfoPanelView:
         """
         if feature is None:
             # No feature to display, e.g. still selecting layers
-            self.infoPanel.setPlainText("")
+            self.infoPanel.setHtml("")
             self.infoPanel.setEnabled(False)
 
         else:
@@ -149,13 +149,24 @@ class InfoPanelView:
             self.infoPanel.setEnabled(True)
             if isinstance(feature, Node):
                 # Display Node info
-                # TODO: make prettier. Maybe use non-plaintext
-                self.infoPanel.setPlainText(json.dumps(feature.data, indent=2))
+                self.infoPanel.setHtml(
+                    f"""
+                    <table>
+                      <tr>
+                        <th>Attribute</th>
+                        <th>Value</th>
+                      </tr>
+                      {
+                          "".join(f"<tr><td>{k}</td><td>{str(v)}</td></tr>" for k,v in flatten(feature.data).items())
+                      }
+                    </table>
+                    """
+                )
 
             elif isinstance(feature, Span):
                 # Display Span info
                 # TODO: make prettier. Maybe use non-plaintext
-                self.infoPanel.setPlainText(json.dumps(feature.data, indent=2))
+                self.infoPanel.setHtml(json.dumps(feature.data, indent=2))
 
             else:
                 raise InvalidViewState
@@ -236,7 +247,7 @@ class ComparisonView:
         self,
         project: QgsProject,
         canvases: Tuple[QgsMapCanvas, QgsMapCanvas],
-        infoPanels: Tuple[QPlainTextEdit, QPlainTextEdit],
+        infoPanels: Tuple[QTextEdit, QTextEdit],
         sameButton: QPushButton,
         notSameButton: QPushButton,
         nextButton: QPushButton,
