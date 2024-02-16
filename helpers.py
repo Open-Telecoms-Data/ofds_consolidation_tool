@@ -1,13 +1,22 @@
+import logging
+
 from qgis.core import (
-    QgsCoordinateReferenceSystem,
-    QgsCoordinateTransform,
     QgsMapLayer,
     QgsProject,
     QgsVectorLayer,
+    QgsRasterLayer,
+    QgsCoordinateReferenceSystem,
 )
-from qgis.gui import QgsMapCanvas
 
-from .models import Network
+logger = logging.getLogger(__name__)
+
+
+# Display our data on the embedded maps in the Web Mercator CRS (aka EPSG 3857),
+# as used by OpenStreetMap.
+# https://epsg.io/3857
+EPSG3857 = QgsCoordinateReferenceSystem("EPSG:3857")
+# WGS84 as used by GeoJson https://epsg.io/4326
+EPSG4328 = QgsCoordinateReferenceSystem("EPSG:4326")
 
 
 def isQgsMapLayerOFDS(layer: QgsVectorLayer) -> bool:
@@ -15,61 +24,36 @@ def isQgsMapLayerOFDS(layer: QgsVectorLayer) -> bool:
     Try to figure out if a given layer is OFDS or not, so we can warn users if they try to use a non-OFDS layer with the consolidation tool.
     """
     # TODO: how?
+    # maybe split this into two functions Nodes vs Spans
     return True
 
 
-class MapController:
+def getOpenStreetMapLayer(project: QgsProject) -> QgsMapLayer:
     """
-    Helper class to wrap around a QgsMapCanvas and a VectorLayer, to make setup and control easier.
+    Get the OpenStreetMap layer, creating it if necessary.
     """
+    # TODO: Tidy up OSM layer when we're done with it, i.e. remove it from the project and set this cache to none when the user closes the UI
 
-    def __init__(
-        self,
-        mapCanvas: QgsMapCanvas,
-        network: Network,
-        project: QgsProject,
-        osmLayer: QgsMapLayer,
-        displayCrs: QgsCoordinateReferenceSystem,
-    ):
-        self.mapCanvas = mapCanvas
-        self.network = network
-        self.nodesLayer = network.nodesLayer
-        self.spansLayer = network.spansLayer
-        self.osmLayer = osmLayer
-        self.displayCrs = displayCrs
-        self.transform = QgsCoordinateTransform(
-            self.nodesLayer.crs(), displayCrs, project
+    OSM_LAYER_NAME = "_ofds_consolidation_tool_OpenStreetMap"
+
+    try:
+        osm_layer = project.mapLayersByName(OSM_LAYER_NAME)[0]
+    except IndexError:
+        osm_layer = QgsRasterLayer(
+            "type=xyz&url=https://tile.openstreetmap.org/{z}/{x}/{y}.png&zmax=19&zmin=0&http-header:referer=",
+            "OpenStreetMap",
+            "wms",
         )
 
-        self._reset()
+        if not osm_layer.isValid():
+            logger.error("Failed to load OSM layer")
+            raise Exception("Failed to load OpenStreetMap layer") from None
 
-    def _reset(self):
-        self.mapCanvas.enableAntiAliasing(True)
-        self.mapCanvas.setDestinationCrs(self.displayCrs)
-        self.mapCanvas.setLayers([self.nodesLayer, self.spansLayer, self.osmLayer])
+        project.addMapLayer(
+            osm_layer, False
+        )  # False to prevent adding it to the legend
 
-    def zoomToNodeByFeatureId(self, nodeId):
-        """
-        Display the given node and surrounding area.
-        """
-        self.mapCanvas.zoomToFeatureIds(self.nodesLayer, [nodeId])
-        # We need to "refresh" i.e. re-render the map after every time we make changes
-        self.mapCanvas.refresh()
+        # OpenStreetMap is EPSG 3857
+        osm_layer.setCrs(EPSG3857)
 
-    def zoomToSpanByFeatureId(self, spanId):
-        """
-        Display the given span and surrounding area.
-        """
-        self.mapCanvas.zoomToFeatureIds(self.nodesLayer, [spanId])
-        # We need to "refresh" i.e. re-render the map after every time we make changes
-        self.mapCanvas.refresh()
-
-    def zoomToEverything(self):
-        """
-        Display the whole layer at once. Probably not that useful, nice for testing maps though.
-        """
-        extentInSourceCrs = self.nodesLayer.extent()
-        extentInDisplayCrs = self.transform.transformBoundingBox(extentInSourceCrs)
-        self.mapCanvas.zoomToFeatureExtent(extentInDisplayCrs)
-        # We need to "refresh" i.e. re-render the map after every time we make changes
-        self.mapCanvas.refresh()
+    return osm_layer
