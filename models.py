@@ -96,8 +96,8 @@ class Network:
         self.spansSpacialIndex = QgsSpatialIndex(self.spansLayer.getFeatures())
 
 
-@dataclass
-class FeaturePairComparisonOutcome:
+@dataclass(frozen=True)
+class FeatureComparisonOutcome:
     """
     Represents the outcome of the comparison of two nodes.
     """
