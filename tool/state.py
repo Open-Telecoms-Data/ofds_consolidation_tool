@@ -18,9 +18,9 @@ class ToolStateEnum(str, Enum):
 
     READY_FOR_SELECTION = "READY_FOR_SELECTION"
     GATHERING_NODE_COMPARISONS = "GATHERING_NODE_COMPARISONS"
-    CONSOLIDATING_NODES = "CONSOLIDATING_NODES"
+    COMPARING_NODES = "COMPARING_NODES"
     GATHERING_SPAN_COMPARISONS = "GATHERING_SPAN_COMPARISONS"
-    CONSOLIDATING_SPANS = "CONSOLIDATING_SPANS"
+    COMPARING_SPANS = "COMPARING_SPANS"
     OUTPUT = "OUTPUT"
 
 
@@ -100,11 +100,11 @@ class GenericToolComparisonState(Generic[FT], AbstractToolState):
 
 
 class ToolNodeComparisonState(GenericToolComparisonState[Node]):
-    state = ToolStateEnum.CONSOLIDATING_NODES
+    state = ToolStateEnum.COMPARING_NODES
 
 
 class ToolSpanComparisonState(GenericToolComparisonState[Span]):
-    state = ToolStateEnum.CONSOLIDATING_SPANS
+    state = ToolStateEnum.COMPARING_SPANS
 
 
 class ToolOutputState(AbstractToolState):

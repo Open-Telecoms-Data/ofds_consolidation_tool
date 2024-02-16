@@ -2,7 +2,14 @@ import logging
 from typing import List, Optional, Tuple, Union
 import json
 from dataclasses import dataclass
-from PyQt5.QtWidgets import QTextEdit, QPushButton, QWidget, QComboBox
+from PyQt5.QtWidgets import (
+    QTextEdit,
+    QPushButton,
+    QWidget,
+    QComboBox,
+    QLabel,
+    QProgressBar,
+)
 from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
 from qgis.gui import QgsMapCanvas
 
@@ -15,6 +22,7 @@ from .state import (
     ToolNodeComparisonState,
     ToolSpanComparisonState,
     ToolState,
+    ToolStateEnum,
 )
 
 logger = logging.getLogger(__name__)
@@ -243,6 +251,9 @@ class ComparisonView:
     nextButton: QPushButton
     prevButton: QPushButton
 
+    progressLabel: QLabel
+    progressBar: QProgressBar
+
     def __init__(
         self,
         project: QgsProject,
@@ -252,6 +263,8 @@ class ComparisonView:
         notSameButton: QPushButton,
         nextButton: QPushButton,
         prevButton: QPushButton,
+        progressLabel: QLabel,
+        progressBar: QProgressBar,
     ):
         osmLayer = getOpenStreetMapLayer(project)
         self.mapViews = (
@@ -266,6 +279,8 @@ class ComparisonView:
         self.notSameButton = notSameButton
         self.nextButton = nextButton
         self.prevButton = prevButton
+        self.progressLabel = progressLabel
+        self.progressBar = progressBar
 
     def _updateComparing(
         self, state: Union[ToolNodeComparisonState, ToolSpanComparisonState]
@@ -297,6 +312,15 @@ class ComparisonView:
         self.nextButton.setEnabled(True)
         self.prevButton.setEnabled(True)
 
+        self.progressLabel.setText(
+            "Nodes" if state.state == ToolStateEnum.COMPARING_NODES else "Spans"
+        )
+        self.progressBar.setEnabled(True)
+        self.progressBar.setMinimum(0)
+        self.progressBar.setMaximum(state.nTotal)
+        self.progressBar.setValue(state.nCompared)
+        self.progressBar.setFormat("%v of %m compared")
+
     def _updateNotComparing(self):
         """
         Disable comparison UI when comparison is not enabled e.g. we're still selecting
@@ -313,6 +337,10 @@ class ComparisonView:
 
         self.nextButton.setEnabled(False)
         self.prevButton.setEnabled(False)
+
+        self.progressLabel.setText("")
+        self.progressBar.setEnabled(False)
+        self.progressBar.setFormat("")
 
     def update(self, state: ToolState):
         if isinstance(state, ToolNodeComparisonState) or isinstance(
@@ -351,6 +379,8 @@ class ToolView:
             notSameButton=ui.notSameButton,
             nextButton=ui.nextButton,
             prevButton=ui.prevButton,
+            progressLabel=ui.comparisonLabel,
+            progressBar=ui.comparisonProgressBar,
         )
 
     def update(self, state: ToolState):
