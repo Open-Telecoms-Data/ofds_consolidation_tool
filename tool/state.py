@@ -3,7 +3,7 @@ from enum import Enum
 
 from qgis.core import QgsVectorLayer
 
-from ..comparisons import GenericFeatureComparison
+from ..comparisons import GenericFeatureComparison, NodeComparison, SpanComparison
 from ..models import FeatureComparisonOutcome, Network, Node, Span
 
 
@@ -36,15 +36,16 @@ class ToolLayerSelectState(AbstractToolState):
         self.selectableLayers = selectableLayers
 
 
-FT = TypeVar("FT", Node, Span)
+FT = TypeVar("FT", Node, Span)  # FeatureT
+FCT = TypeVar("FCT", NodeComparison, SpanComparison)  # FeatureComparisonT
 
 
-class GenericToolComparisonState(Generic[FT], AbstractToolState):
+class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
     # Networks
     networks: Tuple[Network, Network]
 
     # Features for consolidation comparison
-    comparisons: List[GenericFeatureComparison[FT]]
+    comparisons: List[FCT]
 
     # Outcome for each comparison,
     # outcomes is a list the same length as comparisons, with all values initially None
@@ -57,7 +58,7 @@ class GenericToolComparisonState(Generic[FT], AbstractToolState):
     def __init__(
         self,
         networks: Tuple[Network, Network],
-        comparisons: List[GenericFeatureComparison[FT]],
+        comparisons: List[FCT],
     ):
         if len(comparisons) < 1:
             # FIXME: Is 0 comparisons ever valid? Should be allowed? Jump straight to output?
@@ -94,7 +95,7 @@ class GenericToolComparisonState(Generic[FT], AbstractToolState):
         return len([o for o in self.outcomes if o is not None])
 
     @property
-    def currentComparison(self) -> GenericFeatureComparison[FT]:
+    def currentComparison(self) -> FCT:
         return self.comparisons[self.current]
 
     @property
@@ -102,11 +103,11 @@ class GenericToolComparisonState(Generic[FT], AbstractToolState):
         return self.outcomes[self.current]
 
 
-class ToolNodeComparisonState(GenericToolComparisonState[Node]):
+class ToolNodeComparisonState(GenericToolComparisonState[Node, NodeComparison]):
     state = ToolStateEnum.COMPARING_NODES
 
 
-class ToolSpanComparisonState(GenericToolComparisonState[Span]):
+class ToolSpanComparisonState(GenericToolComparisonState[Span, SpanComparison]):
     state = ToolStateEnum.COMPARING_SPANS
 
 

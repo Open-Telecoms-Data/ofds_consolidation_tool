@@ -194,28 +194,12 @@
     <string>Not Equivelant</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="infoPanelA">
+  <widget class="QTextEdit" name="infoPanel">
    <property name="geometry">
     <rect>
      <x>10</x>
      <y>460</y>
-     <width>461</width>
-     <height>301</height>
-    </rect>
-   </property>
-   <property name="undoRedoEnabled">
-    <bool>false</bool>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QTextEdit" name="infoPanelB">
-   <property name="geometry">
-    <rect>
-     <x>470</x>
-     <y>460</y>
-     <width>461</width>
+     <width>921</width>
      <height>301</height>
     </rect>
    </property>
@@ -258,8 +242,7 @@
   <zorder>layoutWidget</zorder>
   <zorder>sameButton</zorder>
   <zorder>notSameButton</zorder>
-  <zorder>infoPanelA</zorder>
-  <zorder>infoPanelB</zorder>
+  <zorder>infoPanel</zorder>
   <zorder>nextButton</zorder>
   <zorder>prevButton</zorder>
  </widget>

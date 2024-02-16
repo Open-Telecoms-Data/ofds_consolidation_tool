@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Generic, Optional, Set, Tuple, TypeVar
+from typing import ClassVar, Generic, Optional, Set, Tuple, TypeVar
 
-from .models import Network, Node, Span
+from .models import FeatureType, Network, Node, Span
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,7 @@ FT = TypeVar("FT", Node, Span)
 
 @dataclass(frozen=True)
 class GenericFeatureComparison(Generic[FT]):
+    featureType: ClassVar[FeatureType]
     features: Tuple[FT, FT]
     reason: ComparisonReason
 
@@ -33,7 +34,9 @@ class GenericFeatureComparison(Generic[FT]):
 # Nodes
 #
 
-NodeComparison = GenericFeatureComparison[Node]
+
+class NodeComparison(GenericFeatureComparison[Node]):
+    featureType = FeatureType.NODE
 
 
 def compareNearestNodes(networkA: Network, networkB: Network) -> Set[NodeComparison]:
@@ -70,6 +73,9 @@ def compareNodes(networkA: Network, networkB: Network) -> Set[NodeComparison]:
 # Spans
 #
 
-SpanComparison = GenericFeatureComparison[Span]
+
+class SpanComparison(GenericFeatureComparison[Span]):
+    featureType = FeatureType.SPAN
+
 
 # TODO
