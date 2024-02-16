@@ -5,7 +5,7 @@ from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 
 from ..comparisons import compareNodes, NodeComparison
 from ..gui import Ui_OFDSDedupToolDialog
-from ..models import Network
+from ..models import FeatureComparisonOutcome, Network
 from .state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -98,5 +98,24 @@ class ToolController:
         else:
             raise ControllerInvalidState
 
-    def onSameButton(self, state: ToolState) -> ToolState: ...
-    def onNotSameButton(self, state: ToolState) -> ToolState: ...
+    def onSameButton(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
+            state.setOutcome(FeatureComparisonOutcome(areDuplicate=True))
+            state.gotoNextComparison()
+            return state
+
+        else:
+            raise ControllerInvalidState
+
+    def onNotSameButton(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
+            state.setOutcome(FeatureComparisonOutcome(areDuplicate=False))
+            state.gotoNextComparison()
+            return state
+
+        else:
+            raise ControllerInvalidState

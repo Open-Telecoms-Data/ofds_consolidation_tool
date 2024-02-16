@@ -103,4 +103,3 @@ class FeatureComparisonOutcome:
     """
 
     areDuplicate: bool
-    reason: Optional[str]
