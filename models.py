@@ -1,10 +1,17 @@
-from typing import Any, Dict, List
+from enum import Enum
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
 
 
 class OFDSInvalidFeature(Exception):
     pass
+
+
+class FeatureType(str, Enum):
+    NODE = "NODE"
+    SPAN = "SPAN"
 
 
 class Feature:
@@ -15,6 +22,7 @@ class Feature:
 
     feature: QgsFeature
     featureId: int  # featureId is the QGIS-internal Id
+    featureType: FeatureType
     id: str  # id is the OFDS id
     data: Dict[str, Any]
 
@@ -28,6 +36,8 @@ class Feature:
 
 
 class Node(Feature):
+    featureType = FeatureType.NODE
+
     def __init__(self, feature: QgsFeature):
         super().__init__(feature)
         if not self.feature.geometry().type() == QgsWkbTypes.GeometryType.PointGeometry:
@@ -39,6 +49,8 @@ class Node(Feature):
 
 
 class Span(Feature):
+    featureType = FeatureType.SPAN
+
     def __str__(self):
         name = self.data["name"] if "name" in self.data else self.id
         return f"<Span {name}>"
@@ -82,3 +94,13 @@ class Network:
 
         self.nodesSpacialIndex = QgsSpatialIndex(self.nodesLayer.getFeatures())
         self.spansSpacialIndex = QgsSpatialIndex(self.spansLayer.getFeatures())
+
+
+@dataclass
+class FeaturePairComparisonOutcome:
+    """
+    Represents the outcome of the comparison of two nodes.
+    """
+
+    areDuplicate: bool
+    reason: Optional[str]

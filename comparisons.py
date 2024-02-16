@@ -31,3 +31,6 @@ class FindNearestNodeComparison(AbstractNetworkComparison):
 
     def findPotentialSameSpans(self) -> Set[Tuple[Span, Span]]:
         return set()
+
+
+COMPARISON_CLASSES = [FindNearestNodeComparison]
