@@ -23,20 +23,16 @@ class ComparisonReason:
 FT = TypeVar("FT", Node, Span)
 
 
-@dataclass(frozen=True)
-class GenericFeatureComparison(Generic[FT]):
-    featureType: ClassVar[FeatureType]
-    features: Tuple[FT, FT]
-    reason: ComparisonReason
-
-
 #
 # Nodes
 #
 
 
-class NodeComparison(GenericFeatureComparison[Node]):
+@dataclass(frozen=True)
+class NodeComparison:
     featureType = FeatureType.NODE
+    features: Tuple[Node, Node]
+    reason: ComparisonReason
 
 
 def compareNearestNodes(networkA: Network, networkB: Network) -> Set[NodeComparison]:
@@ -74,8 +70,11 @@ def compareNodes(networkA: Network, networkB: Network) -> Set[NodeComparison]:
 #
 
 
-class SpanComparison(GenericFeatureComparison[Span]):
+@dataclass(frozen=True)
+class SpanComparison:
     featureType = FeatureType.SPAN
+    features: Tuple[Span, Span]
+    reason: ComparisonReason
 
 
 # TODO

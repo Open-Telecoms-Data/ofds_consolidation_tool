@@ -3,7 +3,7 @@ from enum import Enum
 
 from qgis.core import QgsVectorLayer
 
-from ..comparisons import GenericFeatureComparison, NodeComparison, SpanComparison
+from ..comparisons import NodeComparison, SpanComparison
 from ..models import FeatureComparisonOutcome, Network, Node, Span
 
 
