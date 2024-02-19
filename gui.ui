@@ -166,6 +166,13 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QPushButton" name="finishedButton">
+      <property name="text">
+       <string>Finished</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QPushButton" name="sameButton">

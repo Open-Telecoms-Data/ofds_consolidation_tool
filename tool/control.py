@@ -3,6 +3,8 @@ from typing import List, cast
 import logging
 from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 
+from consolidation import createNewNetworksWithConsolidatedNodes
+
 from ..comparisons import compareNodes, NodeComparison
 from ..gui import Ui_OFDSDedupToolDialog
 from ..models import FeatureComparisonOutcome, Network
@@ -116,6 +118,27 @@ class ToolController:
             state.setOutcome(FeatureComparisonOutcome(areDuplicate=False))
             state.gotoNextComparison()
             return state
+
+        else:
+            raise ControllerInvalidState
+
+    def onFinishedButton(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolNodeComparisonState):
+            if any([o is None for o in state.outcomes]):
+                raise ControllerInvalidState
+            newNetworks = createNewNetworksWithConsolidatedNodes(
+                self.project,
+                state.networks[0],
+                state.networks[1],
+                nodeComparisonsOutcomes=[
+                    (state.comparisons[i], state.outcomes[i])  # type: ignore
+                    for i in range(state.nTotal)
+                ],
+            )
+
+            return ToolSpanComparisonState(newNetworks, ...)  # TODO
+        elif isinstance(state, ToolSpanComparisonState):
+            raise NotImplementedError  # TODO
 
         else:
             raise ControllerInvalidState

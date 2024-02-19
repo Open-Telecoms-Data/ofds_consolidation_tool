@@ -77,4 +77,5 @@ class SpanComparison:
     reason: ComparisonReason
 
 
-# TODO
+def compareSpans(networkA: Network, networkB: Network) -> Set[SpanComparison]:
+    # At this point, both networks share the same nodes
