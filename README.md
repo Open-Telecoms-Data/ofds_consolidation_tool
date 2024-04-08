@@ -91,13 +91,17 @@ wonderful new featurelets.
 
 Please format code with [Black](https://black.readthedocs.io/en/stable/) formatter/convention.
 
+NOTE: We must only use *relative* imports for importing within this codebase, due to the odd nature of the QGIS plugin environment.
+
 ### Dev tools virtual environment
 
 Dev tools i.e. pytest are installed in a virtual environment, but we still need access to the global python environment to access QGIS's PyQGIS libraries. To do this, create the venv with additional access to system packages:
 
 ```bash
-python -m venv --system-site-packages .venv
+/bin/python -m venv --system-site-packages --upgrade-deps .venv
 ```
+
+or replace `/bin/python` with the path to your Python installation used by QGIS.
 
 Then activate the virtualenv, and install dev tools:
 
