@@ -1,6 +1,6 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
 
@@ -58,7 +58,8 @@ class Span(Feature):
 
 class Network:
     """
-    Top-level container object for an OFDS Network, including the source data (nodes & spans layers), plus helper indexes.
+    Top-level container object for an OFDS Network, including the source data (nodes &
+    spans layers), plus helper indexes.
     """
 
     nodesLayer: QgsVectorLayer
@@ -97,7 +98,7 @@ class Network:
 
 
 @dataclass(frozen=True)
-class FeatureComparisonOutcome:
+class FeatureConsolidationOutcome:
     """
     Represents the outcome of the comparison of two nodes.
     """

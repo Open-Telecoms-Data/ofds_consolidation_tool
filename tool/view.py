@@ -13,12 +13,12 @@ from PyQt5.QtWidgets import (
 from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
 from qgis.gui import QgsMapCanvas
 
-from ..comparisons import NodeComparison, SpanComparison
+from .model.comparison import NodeComparison, SpanComparison
 from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer, flatten
-from ..models import FeatureComparisonOutcome, Node, Span, FeatureType
-from .state import (
+from .model.network import FeatureConsolidationOutcome, Node, Span, FeatureType
+from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
     ToolSpanComparisonState,
@@ -304,7 +304,7 @@ class ComparisonView:
 
         self.infoPanelView.update(state.currentComparison)
 
-        outcome: Optional[FeatureComparisonOutcome] = state.currentOutcome
+        outcome: Optional[FeatureConsolidationOutcome] = state.currentOutcome
         if outcome is None:
             self.sameButton.setEnabled(True)
             self.notSameButton.setEnabled(True)

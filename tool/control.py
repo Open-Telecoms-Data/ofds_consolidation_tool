@@ -3,12 +3,11 @@ from typing import List, cast
 import logging
 from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 
-from consolidation import createNewNetworksWithConsolidatedNodes
+from ..consolidation import createNewNetworksWithConsolidatedNodes
 
-from ..comparisons import compareNodes, NodeComparison
 from ..gui import Ui_OFDSDedupToolDialog
-from ..models import FeatureComparisonOutcome, Network
-from .state import (
+from .model.network import FeatureConsolidationOutcome, Network
+from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
     ToolSpanComparisonState,
@@ -45,7 +44,8 @@ class ToolController:
 
         for layer in allLayers:
             # only vector layers can be valid OFDS layers
-            # TODO: test that each layer is a OFDS layer first? maybe display all but disable non-OFDS layers?
+            # TODO: test that each layer is a OFDS layer first? maybe display all but
+            #        disable non-OFDS layers?
             if layer.type() == QgsMapLayerType.VectorLayer:
                 selectableLayers.append(cast(QgsVectorLayer, layer))
 
@@ -67,14 +67,11 @@ class ToolController:
                 spansLayer=self.ui.spansComboBoxB.currentData(),
             )
 
-            # Find the nodes to compare
+            # TODO: Find the nodes to compare
             # TODO: Do this in a background thread, with an intermediary state?
-            nodeComparisons: List[NodeComparison] = list(
-                compareNodes(networkA, networkB)
-            )
 
             return ToolNodeComparisonState(
-                networks=(networkA, networkB), comparisons=nodeComparisons
+                networks=(networkA, networkB), comparisons=list()
             )
 
         else:
@@ -104,7 +101,7 @@ class ToolController:
         if isinstance(state, ToolNodeComparisonState) or isinstance(
             state, ToolSpanComparisonState
         ):
-            state.setOutcome(FeatureComparisonOutcome(areDuplicate=True))
+            state.setOutcome(FeatureConsolidationOutcome(areDuplicate=True))
             state.gotoNextComparison()
             return state
 
@@ -115,7 +112,7 @@ class ToolController:
         if isinstance(state, ToolNodeComparisonState) or isinstance(
             state, ToolSpanComparisonState
         ):
-            state.setOutcome(FeatureComparisonOutcome(areDuplicate=False))
+            state.setOutcome(FeatureConsolidationOutcome(areDuplicate=False))
             state.gotoNextComparison()
             return state
 

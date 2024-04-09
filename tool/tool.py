@@ -9,7 +9,7 @@ from qgis.core import (
 from ..gui import Ui_OFDSDedupToolDialog
 
 from .control import ToolController
-from .state import ToolState
+from .viewmodel.state import ToolState
 from .view import ToolView
 
 

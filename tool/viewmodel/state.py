@@ -3,8 +3,8 @@ from enum import Enum
 
 from qgis.core import QgsVectorLayer
 
-from ..comparisons import NodeComparison, SpanComparison
-from ..models import FeatureComparisonOutcome, Network, Node, Span
+from ..model.comparison import NodeComparison, SpanComparison
+from ..model.network import FeatureConsolidationOutcome, Network, Node, Span
 
 
 class ToolInvalidState(Exception):
@@ -50,7 +50,7 @@ class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
     # Outcome for each comparison,
     # outcomes is a list the same length as comparisons, with all values initially None
     # but updated as outcomes are input by the user.
-    outcomes: List[Union[None, FeatureComparisonOutcome]]
+    outcomes: List[Union[None, FeatureConsolidationOutcome]]
 
     # Keep track of which pair we're looking at now
     current: int
@@ -83,7 +83,7 @@ class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
             new_current = self.nTotal - 1
         self.current = new_current
 
-    def setOutcome(self, outcome: FeatureComparisonOutcome):
+    def setOutcome(self, outcome: FeatureConsolidationOutcome):
         self.outcomes[self.current] = outcome
 
     @property
@@ -99,7 +99,7 @@ class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
         return self.comparisons[self.current]
 
     @property
-    def currentOutcome(self) -> Union[None, FeatureComparisonOutcome]:
+    def currentOutcome(self) -> Union[None, FeatureConsolidationOutcome]:
         return self.outcomes[self.current]
 
 

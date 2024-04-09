@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class OFDSDedupPlugin:
-    def __init__(self, iface):
-        self.iface = iface
+    def __init__(self):
         self.tool_dialog = OFDSDedupToolDialog()
 
     def initGui(self):
