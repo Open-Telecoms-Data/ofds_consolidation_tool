@@ -9,15 +9,17 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QLabel,
     QProgressBar,
+    QTabWidget,
 )
 from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
 from qgis.gui import QgsMapCanvas
 
-from .model.comparison import NodeComparison, SpanComparison
+from .model.comparison import ALL_NODE_PROPERTIES, NodeComparison, SpanComparison
 from ..gui import Ui_OFDSDedupToolDialog
 
-from ..helpers import EPSG3857, getOpenStreetMapLayer, flatten
-from .model.network import FeatureConsolidationOutcome, Span, FeatureType
+from ..helpers import EPSG3857, getOpenStreetMapLayer
+from .model.network import Span, FeatureType
+from .model.comparison import ComparisonOutcome
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -80,7 +82,7 @@ class MiniMapView:
         self.mapCanvas.enableAntiAliasing(True)
         self.mapCanvas.setDestinationCrs(self.DISPLAY_CRS)
 
-    def _zoomToEverything(self):
+    def zoomToEverything(self):
         if not self.layers:
             raise InvalidViewState
 
@@ -112,7 +114,7 @@ class MiniMapView:
                 [self.layers.nodesLayer, self.layers.spansLayer, self.backgroundLayer]
             )
             logger.info(f"MiniMap has new {self.mapCanvas.layers()=}")
-            self._zoomToEverything()
+            self.zoomToEverything()
 
         # Check to make sure the layers haven't change for some reason
         if (
@@ -126,6 +128,7 @@ class MiniMapView:
         if state.featureType == FeatureType.NODE:
             self.mapCanvas.zoomToFeatureIds(self.layers.nodesLayer, [state.featureId])
             self.layers.nodesLayer.selectByIds([state.featureId])
+            self.mapCanvas.zoomScale(25000.0)
 
         elif state.featureType == FeatureType.SPAN:
             self.mapCanvas.zoomToFeatureIds(self.layers.spansLayer, [state.featureId])
@@ -144,6 +147,64 @@ class InfoPanelView:
     def __init__(self, infoPanel: QTextEdit):
         self.infoPanel = infoPanel
 
+    def render_node_comparison_info_html(self, comparison: NodeComparison) -> str:
+        """
+        Returns HTML to display in the info panel when comparing two nodes.
+        """
+
+        node_a = comparison.features[0]
+        node_b = comparison.features[1]
+
+        hi_score_props = set(comparison.get_high_scoring_properties())
+        all_props = ALL_NODE_PROPERTIES
+
+        hi_score_rows = [
+            (prop, node_a.get(prop), node_b.get(prop), comparison.scores.get(prop, 0))
+            for prop in hi_score_props
+        ]
+
+        all_score_rows = [
+            (prop, node_a.get(prop), node_b.get(prop), comparison.scores.get(prop, 0))
+            for prop in all_props
+        ]
+
+        # Display Node info
+        info_html = f"""
+        <h1>Overall Confidence: {int(comparison.confidence)}%</h1>
+
+        <h2>Similar Properties</h2>
+
+        <table>
+          <tr>
+            <th>Attribute</th>
+            <th>Value A</th>
+            <th>Value B</th>
+            <th>Score</th>
+          </tr>
+          {
+              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
+                      for k,va,vb,sc in hi_score_rows)
+          }
+        </table>
+
+        <h2>All Properties</h2>
+
+        <table>
+          <tr>
+            <th>Attribute</th>
+            <th>Value A</th>
+            <th>Value B</th>
+            <th>Score</th>
+          </tr>
+          {
+              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
+                      for k,va,vb,sc in all_score_rows)
+          }
+        </table>
+        """
+
+        return info_html
+
     def update(self, comparison: Union[NodeComparison, SpanComparison, None]):
         """
         Display the given Comparison, or nothing.
@@ -155,34 +216,16 @@ class InfoPanelView:
             return
 
         # Display feature info
-        dataA = flatten(comparison.features[0].data)
-        dataB = flatten(comparison.features[1].data)
-        keys = sorted(list(set(dataA.keys()).union(dataB.keys())))
-        table = [(key, dataA.get(key), dataB.get(key)) for key in keys]
 
         self.infoPanel.setEnabled(True)
         if isinstance(comparison, NodeComparison):
-            # Display Node info
-            self.infoPanel.setHtml(
-                f"""
-                <table>
-                  <tr>
-                    <th>Attribute</th>
-                    <th>Value A</th>
-                    <th>Value B</th>
-                  </tr>
-                  {
-                      "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td></tr>"
-                              for k,va,vb in table)
-                  }
-                </table>
-                """
-            )
+
+            self.infoPanel.setHtml(self.render_node_comparison_info_html(comparison))
 
         elif isinstance(comparison, Span):
             # Display Span info
             # TODO: make prettier. Maybe use non-plaintext
-            self.infoPanel.setHtml(json.dumps(comparison.data, indent=2))
+            self.infoPanel.setHtml(json.dumps(comparison.properties, indent=2))
 
         else:
             raise InvalidViewState
@@ -246,7 +289,7 @@ class LayerSelectView:
         self.startButton.setEnabled(enable_layer_select)
 
 
-class ComparisonView:
+class NodeComparisonView:
     """
     The view which renders the comparison part of the UI.
     """
@@ -288,32 +331,34 @@ class ComparisonView:
         self.progressLabel = progressLabel
         self.progressBar = progressBar
 
-    def _updateComparing(
-        self, state: Union[ToolNodeComparisonState, ToolSpanComparisonState]
-    ):
+    def _updateComparing(self, state: ToolNodeComparisonState):
         """
         Update UI when we are currently comparing a pair of features.
         """
-        for i in [0, 1]:
-            self.mapViews[i].update(
-                MiniMapView.State(
-                    nodesLayer=state.networks[i].nodesLayer,
-                    spansLayer=state.networks[i].spansLayer,
-                    featureId=state.currentComparison.features[i].featureId,
-                    featureType=state.currentComparison.features[i].featureType,
+        if state.currentComparison is None:
+            for i in [0, 1]:
+                self.mapViews[i].zoomToEverything()
+        else:
+            for i in [0, 1]:
+                self.mapViews[i].update(
+                    MiniMapView.State(
+                        nodesLayer=state.networks[i].nodesLayer,
+                        spansLayer=state.networks[i].spansLayer,
+                        featureId=state.currentComparison.features[i].featureId,
+                        featureType=state.currentComparison.features[i].featureType,
+                    )
                 )
-            )
 
         self.infoPanelView.update(state.currentComparison)
 
-        outcome: Optional[FeatureConsolidationOutcome] = state.currentOutcome
+        outcome: Optional[ComparisonOutcome] = state.currentOutcome
         if outcome is None:
             self.sameButton.setEnabled(True)
             self.notSameButton.setEnabled(True)
 
         else:
-            self.sameButton.setEnabled(not outcome.areDuplicate)
-            self.notSameButton.setEnabled(outcome.areDuplicate)
+            self.sameButton.setEnabled(not outcome.consolidate)
+            self.notSameButton.setEnabled(outcome.consolidate)
 
         self.nextButton.setEnabled(True)
         self.prevButton.setEnabled(True)
@@ -348,10 +393,10 @@ class ComparisonView:
         self.progressBar.setFormat("")
 
     def update(self, state: ToolState):
-        if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
-        ):
+        if isinstance(state, ToolNodeComparisonState):
             self._updateComparing(state)
+        elif isinstance(state, ToolSpanComparisonState):
+            raise NotImplementedError
         else:
             self._updateNotComparing()
 
@@ -367,7 +412,8 @@ class ToolView:
     """
 
     layerSelectView: LayerSelectView
-    comparisonView: ComparisonView
+    nodeComparisonView: NodeComparisonView
+    tabWidget: QTabWidget
 
     def __init__(self, project: QgsProject, ui: Ui_OFDSDedupToolDialog):
         self.layerSelectView = LayerSelectView(
@@ -376,18 +422,29 @@ class ToolView:
             startButton=ui.startButton,
         )
 
-        self.comparisonView = ComparisonView(
+        self.nodeComparisonView = NodeComparisonView(
             project=project,
             canvases=(ui.mapA, ui.mapB),
             infoPanel=ui.infoPanel,
-            sameButton=ui.sameButton,
-            notSameButton=ui.notSameButton,
-            nextButton=ui.nextButton,
-            prevButton=ui.prevButton,
+            sameButton=ui.sameNodesButton,
+            notSameButton=ui.notSameNodesButton,
+            nextButton=ui.nextNodesButton,
+            prevButton=ui.prevNodesButton,
             progressLabel=ui.comparisonLabel,
             progressBar=ui.comparisonProgressBar,
         )
 
+        self.tabWidget = ui.tabWidget
+
     def update(self, state: ToolState):
+        if isinstance(state, ToolLayerSelectState):
+            self.tabWidget.setCurrentIndex(0)
+
+        elif isinstance(state, ToolNodeComparisonState):
+            self.tabWidget.setCurrentIndex(1)
+
+        else:
+            raise NotImplementedError
+
         self.layerSelectView.update(state)
-        self.comparisonView.update(state)
+        self.nodeComparisonView.update(state)

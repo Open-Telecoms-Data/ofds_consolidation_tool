@@ -4,6 +4,7 @@ import sys
 from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
 from PyQt5.QtWidgets import QAction
 from qgis.core import QgsProject
+from qgis.utils import iface  # type: ignore
 
 from .tool.tool import OFDSDedupToolDialog
 
@@ -15,12 +16,12 @@ class OFDSDedupPlugin:
         self.tool_dialog = OFDSDedupToolDialog()
 
     def initGui(self):
-        self.action = QAction("Consolidate OFDS", self.iface.mainWindow())
+        self.action = QAction("Consolidate OFDS", iface.mainWindow())
         self.action.triggered.connect(self.run)
-        self.iface.addToolBarIcon(self.action)
+        iface.addToolBarIcon(self.action)
 
     def unload(self):
-        self.iface.removeToolBarIcon(self.action)
+        iface.removeToolBarIcon(self.action)
         del self.action
 
     def run(self):

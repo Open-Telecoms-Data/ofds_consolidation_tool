@@ -7,4 +7,6 @@ flake8-bugbear
 black>=24
 isort
 mypy>=1.8,<2
+PyQt5-stubs
+qgis-stubs
 pip-tools

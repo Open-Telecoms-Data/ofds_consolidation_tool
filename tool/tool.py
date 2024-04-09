@@ -40,14 +40,16 @@ class OFDSDedupToolDialog(QDialog):
         self.ui = Ui_OFDSDedupToolDialog()
         self.ui.setupUi(self)
 
+        # Don't allow the user to switch tabs
+        self.ui.tabWidget.tabBar().setEnabled(False)
+
         # Connect UI signals to slots on this class
         self.ui.startButton.clicked.connect(self.onStartButtonClicked)
-        self.ui.sameButton.clicked.connect(self.onSameButtonClicked)
-        self.ui.notSameButton.clicked.connect(self.onNotSameButtonClicked)
-        self.ui.nextButton.clicked.connect(self.onNextButtonClicked)
-        self.ui.prevButton.clicked.connect(self.onPrevButtonClicked)
-        self.ui.finishedButton.clicked.connect(self.onFinishedButtonClicked)
-        self.ui.buttons.clicked.connect(self.onOkCancelButtonClicked)
+        self.ui.sameNodesButton.clicked.connect(self.onSameNodeButtonClicked)
+        self.ui.notSameNodesButton.clicked.connect(self.onNotSameNodeButtonClicked)
+        self.ui.nextNodesButton.clicked.connect(self.onNextNodesButtonClicked)
+        self.ui.prevNodesButton.clicked.connect(self.onPrevNodesButtonClicked)
+        self.ui.finishedNodesButton.clicked.connect(self.onFinishedNodesButtonClicked)
 
     def reset(self, project: QgsProject):
         """
@@ -55,41 +57,38 @@ class OFDSDedupToolDialog(QDialog):
         """
         self.project = project
 
-        # Setup MVC
+        # Setup View/Controller
         self.controller = ToolController(self.project, self.ui)
         self.view = ToolView(self.project, self.ui)
 
         # Set initial state
-        self.update(self.controller.onInit())
+        self.set_state(self.controller.onInit())
 
-    def update(self, state: ToolState):
+    def set_state(self, state: ToolState):
         self.state = state
+        logger.debug(f"STATE = {self.state}")
         self.view.update(self.state)
 
     def onStartButtonClicked(self):
         logger.debug("Start button clicked")
-        self.update(self.controller.onStartButton(self.state))
+        self.set_state(self.controller.onStartButton(self.state))
 
-    def onSameButtonClicked(self):
-        logger.debug("Same button clicked")
-        self.update(self.controller.onSameButton(self.state))
+    def onSameNodeButtonClicked(self):
+        logger.debug("Same node button clicked")
+        self.set_state(self.controller.onSameButton(self.state))
 
-    def onNotSameButtonClicked(self):
-        logger.debug("Not Same button clicked")
-        self.update(self.controller.onNotSameButton(self.state))
+    def onNotSameNodeButtonClicked(self):
+        logger.debug("Not Same node button clicked")
+        self.set_state(self.controller.onNotSameButton(self.state))
 
-    def onNextButtonClicked(self):
-        self.update(self.controller.onNextButton(self.state))
+    def onNextNodesButtonClicked(self):
+        self.set_state(self.controller.onNextButton(self.state))
 
-    def onPrevButtonClicked(self):
-        self.update(self.controller.onPrevButton(self.state))
+    def onPrevNodesButtonClicked(self):
+        self.set_state(self.controller.onPrevButton(self.state))
 
-    def onFinishedButtonClicked(self):
-        self.update(self.controller.onFinishedButton(self.state))
-
-    def onOkCancelButtonClicked(self):
-        logger.debug("OK or Cancel button clicked")
-        self.reset(self.project)
+    def onFinishedNodesButtonClicked(self):
+        self.set_state(self.controller.onFinishedButton(self.state))
 
 
 class Worker(QThread):

@@ -34,7 +34,9 @@ You'll need to symlink your project directory into QGIS's local plugins director
 From within the project git repo/directory:
 
 ```bash
-cd path/to/ofds-consolidation-tool/
+cd path/to/ofds_consolidation_tool/
+
+# NOTE: The project folder *must* only use underscores and letters, no dashes
 
 QGIS_PLUGINS_DIR="$HOME/.local/share/QGIS/QGIS3/profiles/default/python/plugins"
 mkdir -p "$QGIS_PLUGINS_DIR"

@@ -3,8 +3,9 @@ from enum import Enum
 
 from qgis.core import QgsVectorLayer
 
-from ..model.comparison import NodeComparison
-from ..model.network import FeatureConsolidationOutcome, Network
+from ..model.consolidation import NetworkNodesConsolidator
+from ..model.comparison import NodeComparison, ComparisonOutcome
+from ..model.network import Network
 
 
 class ToolInvalidState(Exception):
@@ -33,19 +34,17 @@ class ToolLayerSelectState(AbstractToolState):
     def __init__(self, selectableLayers: List[QgsVectorLayer]):
         self.selectableLayers = selectableLayers
 
+    def __str__(self) -> str:
+        return f"<ToolLayerSelectState n_layers={len(self.selectableLayers)}>"
 
-class ToolNodeComparisonState:
+
+class ToolNodeComparisonState(AbstractToolState):
     state = ToolStateEnum.COMPARING_NODES
     # Networks
     networks: Tuple[Network, Network]
 
-    # Features for consolidation comparison
-    comparisons: List[NodeComparison]
-
-    # Outcome for each comparison,
-    # outcomes is a list the same length as comparisons, with all values initially None
-    # but updated as outcomes are input by the user.
-    outcomes: List[Union[None, FeatureConsolidationOutcome]]
+    # Consolidator
+    nodes_consolidator: NetworkNodesConsolidator
 
     # Keep track of which pair we're looking at now
     current: int
@@ -53,19 +52,14 @@ class ToolNodeComparisonState:
     def __init__(
         self,
         networks: Tuple[Network, Network],
-        comparisons: List[NodeComparison],
+        nodes_consolidator: NetworkNodesConsolidator,
     ):
-        if len(comparisons) < 1:
-            # FIXME: Is 0 comparisons ever valid? Should be allowed? Jump straight
-            # to output?
-            raise ToolInvalidState
-
         self.networks = networks
-        self.comparisons = comparisons
+        self.nodes_consolidator = nodes_consolidator
         self.current = 0
 
-        # Create outcomes list the same length as featurePairs
-        self.outcomes = list(None for _ in self.comparisons)
+    def __str__(self):
+        return f"<ToolNodeComparisonState total={self.nTotal} compared={self.nCompared} current={self.current}>"
 
     def gotoNextComparison(self):
         new_current = self.current + 1
@@ -79,24 +73,33 @@ class ToolNodeComparisonState:
             new_current = self.nTotal - 1
         self.current = new_current
 
-    def setOutcome(self, outcome: FeatureConsolidationOutcome):
-        self.outcomes[self.current] = outcome
+    def setOutcome(self, outcome: ComparisonOutcome):
+        if outcome.consolidate:
+            self.nodes_consolidator.node_ask_outcomes[self.current] = outcome
 
     @property
     def nTotal(self) -> int:
-        return len(self.comparisons)
+        return len(self.nodes_consolidator.node_ask_comparisons)
 
     @property
     def nCompared(self) -> int:
-        return len([o for o in self.outcomes if o is not None])
+        return len(
+            [o for o in self.nodes_consolidator.node_ask_outcomes if o is not None]
+        )
 
     @property
-    def currentComparison(self) -> NodeComparison:
-        return self.comparisons[self.current]
+    def currentComparison(self) -> Union[None, NodeComparison]:
+        try:
+            return self.nodes_consolidator.node_ask_comparisons[self.current]
+        except IndexError:
+            return None
 
     @property
-    def currentOutcome(self) -> Union[None, FeatureConsolidationOutcome]:
-        return self.outcomes[self.current]
+    def currentOutcome(self) -> Union[None, ComparisonOutcome]:
+        try:
+            return self.nodes_consolidator.node_ask_outcomes[self.current]
+        except IndexError:
+            return None
 
 
 class ToolSpanComparisonState(AbstractToolState):

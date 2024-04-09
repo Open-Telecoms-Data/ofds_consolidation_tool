@@ -1,0 +1,2 @@
+class ModelInvalidState(Exception):
+    pass

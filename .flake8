@@ -9,4 +9,4 @@ exclude =
     .venv
     gui.py
     .git
-    lib
+    _lib

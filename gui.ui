@@ -16,242 +16,285 @@
   <property name="sizeGripEnabled">
    <bool>false</bool>
   </property>
-  <widget class="QDialogButtonBox" name="buttons">
-   <property name="geometry">
-    <rect>
-     <x>770</x>
-     <y>910</y>
-     <width>166</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Horizontal</enum>
-   </property>
-   <property name="standardButtons">
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-   </property>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>6</x>
-     <y>6</y>
-     <width>931</width>
-     <height>122</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="selectFormsLayout">
-    <item>
-     <widget class="QGroupBox" name="groupBoxA">
-      <property name="title">
-       <string>Network A</string>
-      </property>
-      <layout class="QFormLayout" name="selectFormA">
-       <item row="0" column="0">
-        <widget class="QLabel" name="nodesLabelA">
-         <property name="text">
-          <string>Nodes</string>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <property name="usesScrollButtons">
+      <bool>false</bool>
+     </property>
+     <widget class="QWidget" name="tabSelectInput">
+      <attribute name="title">
+       <string>Select Input</string>
+      </attribute>
+      <widget class="QWidget" name="layoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>40</y>
+         <width>911</width>
+         <height>122</height>
+        </rect>
+       </property>
+       <layout class="QHBoxLayout" name="selectFormsLayout">
+        <item>
+         <widget class="QGroupBox" name="groupBoxA">
+          <property name="title">
+           <string>Network A</string>
+          </property>
+          <layout class="QFormLayout" name="selectFormA">
+           <item row="0" column="0">
+            <widget class="QLabel" name="nodesLabelA">
+             <property name="text">
+              <string>Nodes</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="nodesComboBoxA"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="spansLabelA">
+             <property name="text">
+              <string>Spans</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="spansComboBoxA"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBoxB">
+          <property name="title">
+           <string>Network B</string>
+          </property>
+          <layout class="QFormLayout" name="selectFormB">
+           <item row="0" column="0">
+            <widget class="QLabel" name="nodesLabelB">
+             <property name="text">
+              <string>Nodes</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="nodesComboBoxB"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="spansLabelB">
+             <property name="text">
+              <string>Spans</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="spansComboBoxB"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QPushButton" name="startButton">
+       <property name="geometry">
+        <rect>
+         <x>810</x>
+         <y>860</y>
+         <width>103</width>
+         <height>36</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Start</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="settingsLabel">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>190</y>
+         <width>81</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Settings</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="inputSelectionLabel">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>141</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Input Selection</string>
+       </property>
+      </widget>
+      <widget class="QWidget" name="">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>220</y>
+         <width>354</width>
+         <height>92</height>
+        </rect>
+       </property>
+       <layout class="QFormLayout" name="settingsFormLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="autoThresholdLabel">
+          <property name="text">
+           <string>Auto Consolidate Above (%)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QSpinBox" name="autoThresholdSpinBox">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>100</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="askThresholdLabel">
+          <property name="text">
+           <string>Ask Above (%)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="askThresholdSpinBox">
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="tabConsolidateNodes">
+      <attribute name="title">
+       <string>Consolidate Nodes</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <layout class="QHBoxLayout" name="nodesProgressLayout">
+         <item>
+          <widget class="QLabel" name="comparisonLabel">
+           <property name="text">
+            <string>Node Comparisons</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QProgressBar" name="comparisonProgressBar">
+           <property name="minimum">
+            <number>0</number>
+           </property>
+           <property name="maximum">
+            <number>1</number>
+           </property>
+           <property name="value">
+            <number>0</number>
+           </property>
+           <property name="format">
+            <string>%v of %m</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="finishedNodesButton">
+           <property name="text">
+            <string>Finish</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="mapsLayout">
+         <item>
+          <widget class="QgsMapCanvas" name="mapA" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QgsMapCanvas" name="mapB" native="true">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="infoPanel">
+         <property name="undoRedoEnabled">
+          <bool>false</bool>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="nodesComboBoxA"/>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="spansLabelA">
-         <property name="text">
-          <string>Spans</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="spansComboBoxA"/>
+       <item>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="1">
+          <widget class="QPushButton" name="sameNodesButton">
+           <property name="text">
+            <string>Same</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QPushButton" name="nextNodesButton">
+           <property name="text">
+            <string>Next &gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="prevNodesButton">
+           <property name="text">
+            <string>&lt; Previous</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="notSameNodesButton">
+           <property name="text">
+            <string>Not Same</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="groupBoxB">
-      <property name="title">
-       <string>Network B</string>
-      </property>
-      <layout class="QFormLayout" name="selectFormB">
-       <item row="0" column="0">
-        <widget class="QLabel" name="nodesLabelB">
-         <property name="text">
-          <string>Nodes</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QComboBox" name="nodesComboBoxB"/>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="spansLabelB">
-         <property name="text">
-          <string>Spans</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="spansComboBoxB"/>
-       </item>
-      </layout>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>170</y>
-     <width>921</width>
-     <height>281</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="mapsLayout">
-    <item>
-     <widget class="QgsMapCanvas" name="mapA" native="true"/>
-    </item>
-    <item>
-     <widget class="QgsMapCanvas" name="mapB" native="true"/>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>6</x>
-     <y>120</y>
-     <width>931</width>
-     <height>38</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="startLayout">
-    <item>
-     <widget class="QPushButton" name="startButton">
-      <property name="maximumSize">
-       <size>
-        <width>100</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Start</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="comparisonLabel">
-      <property name="text">
-       <string>Comparing Nodes</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QProgressBar" name="comparisonProgressBar">
-      <property name="minimum">
-       <number>0</number>
-      </property>
-      <property name="maximum">
-       <number>1</number>
-      </property>
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="format">
-       <string>%v of %m</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="finishedButton">
-      <property name="text">
-       <string>Finished</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QPushButton" name="sameButton">
-   <property name="geometry">
-    <rect>
-     <x>400</x>
-     <y>790</y>
-     <width>141</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Equivelant</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="notSameButton">
-   <property name="geometry">
-    <rect>
-     <x>400</x>
-     <y>830</y>
-     <width>141</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Not Equivelant</string>
-   </property>
-  </widget>
-  <widget class="QTextEdit" name="infoPanel">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>460</y>
-     <width>921</width>
-     <height>301</height>
-    </rect>
-   </property>
-   <property name="undoRedoEnabled">
-    <bool>false</bool>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="nextButton">
-   <property name="geometry">
-    <rect>
-     <x>600</x>
-     <y>790</y>
-     <width>103</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Next &gt;</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="prevButton">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>790</y>
-     <width>103</width>
-     <height>36</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>&lt; Prev</string>
-   </property>
-  </widget>
-  <zorder>layoutWidget</zorder>
-  <zorder>buttons</zorder>
-  <zorder>layoutWidget</zorder>
-  <zorder>layoutWidget</zorder>
-  <zorder>sameButton</zorder>
-  <zorder>notSameButton</zorder>
-  <zorder>infoPanel</zorder>
-  <zorder>nextButton</zorder>
-  <zorder>prevButton</zorder>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <customwidgets>
   <customwidget>
@@ -262,38 +305,5 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>buttons</sender>
-   <signal>accepted()</signal>
-   <receiver>OFDSDedupToolDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>34</x>
-     <y>549</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttons</sender>
-   <signal>rejected()</signal>
-   <receiver>OFDSDedupToolDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>102</x>
-     <y>549</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

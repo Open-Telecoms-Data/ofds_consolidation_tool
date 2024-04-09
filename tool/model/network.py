@@ -1,5 +1,4 @@
 from enum import Enum
-from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
@@ -24,15 +23,15 @@ class Feature:
     featureId: int  # featureId is the QGIS-internal Id
     featureType: FeatureType
     id: str  # id is the OFDS id
-    data: Dict[str, Any]
+    properties: Dict[str, Any]
 
     def __init__(self, feature: QgsFeature):
         self.feature = feature
         self.featureId = feature.id()
-        self.data = feature.attributeMap()
-        if "id" not in self.data or not isinstance(self.data["id"], str):
+        self.properties = feature.attributeMap()
+        if "id" not in self.properties or not isinstance(self.properties["id"], str):
             raise OFDSInvalidFeature
-        self.id = self.data["id"]
+        self.id = self.properties["id"]
 
 
 class Node(Feature):
@@ -43,16 +42,56 @@ class Node(Feature):
         if not self.feature.geometry().type() == QgsWkbTypes.GeometryType.PointGeometry:
             raise OFDSInvalidFeature("Nodes layer must be PointGeometry")
 
+    def get(self, k):
+        """
+        Override get to access the properties.
+        Also some shortcuts to properties we know we're comparing.
+        """
+        if k == "location/address/country":
+            # Return location/address/country
+            return self.properties.get("location", {}).get("address", {}).get("country")
+        if k == "location/address/streetAddress":
+            return (
+                self.properties.get("location", {})
+                .get("address", {})
+                .get("streetAddress")
+            )
+        if k == "location/address/postalCode":
+            return (
+                self.properties.get("location", {}).get("address", {}).get("postalCode")
+            )
+        if k == "location/address/region":
+            return self.properties.get("location", {}).get("address", {}).get("region")
+        if k == "location/address/locality":
+            return (
+                self.properties.get("location", {}).get("address", {}).get("locality")
+            )
+        if k == "phase/name":
+            return self.properties.get("phase", {}).get("name")
+        if k == "physicalInfrastructureProvider":
+            # Return physicalInfrastructureProvider/name
+            return self.properties.get("physicalInfrastructureProvider", {}).get("name")
+        if k == "networkProviders":
+            # Return a list of the names in the array, as ids are irrelevant
+            return [
+                np.get("name") for np in self.properties.get("networkProviders", [])
+            ]
+
+        return self.properties.get(k)
+
     def __str__(self):
-        name = self.data["name"] if "name" in self.data else self.id
+        name = self.properties["name"] if "name" in self.properties else self.id
         return f"<Node {name}>"
 
 
 class Span(Feature):
     featureType = FeatureType.SPAN
 
+    def get(self, k):
+        return self.properties.get(k)
+
     def __str__(self):
-        name = self.data["name"] if "name" in self.data else self.id
+        name = self.properties["name"] if "name" in self.properties else self.id
         return f"<Span {name}>"
 
 
@@ -95,12 +134,3 @@ class Network:
 
         self.nodesSpacialIndex = QgsSpatialIndex(self.nodesLayer.getFeatures())
         self.spansSpacialIndex = QgsSpatialIndex(self.spansLayer.getFeatures())
-
-
-@dataclass(frozen=True)
-class FeatureConsolidationOutcome:
-    """
-    Represents the outcome of the comparison of two nodes.
-    """
-
-    areDuplicate: bool

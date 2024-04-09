@@ -1,8 +1,33 @@
+import logging
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List, Optional, Tuple
 from .network import Node, Span
 
 from ..._lib.jellyfish import _jellyfish as jellyfish
+
+logger = logging.getLogger(__name__)
+
+
+ALL_NODE_PROPERTIES = [
+    "name",
+    "phase/name",
+    "physicalInfrastructureProvider",
+    "accessPoint",
+    "power",
+    "status",
+    "location/coordinates",
+    "location/address/streetAddress",
+    "location/address/locality",
+    "location/address/region",
+    "location/address/postalCode",
+    "location/address/country",
+    "type",
+    "internationalConnections/streetAddress",
+    "internationalConnections/region",
+    "internationalConnections/postalCode",
+    "internationalConnections/country",
+    "networkProviders",
+]
 
 
 @dataclass(frozen=True)
@@ -35,7 +60,7 @@ class Comparison:
     def __init__(self, weights=None):
         self.weights = weights if weights else self.default_weights()
 
-    def default_weights(self):
+    def default_weights(self) -> Dict[str, float]:
         # We can pass different weights in for nodes and spans, but falls back to this.
         weights = {
             "name": 0.5,
@@ -61,9 +86,6 @@ class Comparison:
 
     def weight(self, prop):
         return self.weights.get(prop)
-
-    def scores(self):
-        return self.scores
 
     def calculate_total(self):
         # calculate total from scores*weights
@@ -133,17 +155,22 @@ class Comparison:
 
 @dataclass
 class NodeComparison(Comparison):
-    features: tuple[Node, Node]
-    node_a_id: str
-    node_b_id: str
+    node_a: Node
+    node_b: Node
     total: float
     confidence: float
-    scores: dict
+    scores: Dict[str, float]
+    weight: Dict[str, float]
 
-    def __init__(self, node_a, node_b, weights=None):
+    def __init__(
+        self,
+        node_a: Node,
+        node_b: Node,
+        weights: Optional[Dict[str, float]] = None,
+    ):
         self.features = (node_a, node_b)
-        self.node_a_id = node_a.id
-        self.node_b_id = node_b.id
+        self.node_a = node_a
+        self.node_b = node_b
         self.weights = weights if weights else self.default_weights()
 
         # TODO: currently this will score low if one is missing - what we actually need
@@ -186,7 +213,7 @@ class NodeComparison(Comparison):
             ),
         }
 
-        print(self.scores)
+        logger.debug(self.scores)
 
         self.calculate_total()
         self.calculate_confidence()
@@ -200,7 +227,7 @@ class NodeComparison(Comparison):
 
 @dataclass
 class SpanComparison(Comparison):
-    features: tuple[Span, Span]
+    features: Tuple[Span, Span]
     node_a_id: str
     node_b_id: str
     total: float
@@ -236,3 +263,12 @@ class SpanComparison(Comparison):
         # tbd: worth the effort of comparing proximity of start and end nodes if they're
         # not an exact match?
         pass
+
+
+@dataclass(frozen=True)
+class ComparisonOutcome:
+    """
+    Represents the outcome of the comparison of two features by the user.
+    """
+
+    consolidate: bool

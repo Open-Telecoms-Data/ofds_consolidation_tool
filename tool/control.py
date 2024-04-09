@@ -3,8 +3,11 @@ from typing import List, cast
 import logging
 from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 
+from .model.consolidation import NetworkNodesConsolidator
+
 from ..gui import Ui_OFDSDedupToolDialog
-from .model.network import FeatureConsolidationOutcome, Network
+from .model.network import Network
+from .model.comparison import ComparisonOutcome
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -69,16 +72,20 @@ class ToolController:
             # TODO: Do this in a background thread, with an intermediary state?
 
             return ToolNodeComparisonState(
-                networks=(networkA, networkB), comparisons=list()
+                networks=(networkA, networkB),
+                nodes_consolidator=NetworkNodesConsolidator(
+                    networkA,
+                    networkB,
+                    merge_above=self.ui.autoThresholdSpinBox.value(),
+                    ask_above=self.ui.askThresholdSpinBox.value(),
+                ),
             )
 
         else:
             raise ControllerInvalidState
 
     def onNextButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
-        ):
+        if isinstance(state, ToolNodeComparisonState):
             state.gotoNextComparison()
             return state
 
@@ -86,9 +93,7 @@ class ToolController:
             raise ControllerInvalidState
 
     def onPrevButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
-        ):
+        if isinstance(state, ToolNodeComparisonState):
             state.gotoPrevComparison()
             return state
 
@@ -96,10 +101,8 @@ class ToolController:
             raise ControllerInvalidState
 
     def onSameButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
-        ):
-            state.setOutcome(FeatureConsolidationOutcome(areDuplicate=True))
+        if isinstance(state, ToolNodeComparisonState):
+            state.setOutcome(ComparisonOutcome(consolidate=True))
             state.gotoNextComparison()
             return state
 
@@ -107,10 +110,8 @@ class ToolController:
             raise ControllerInvalidState
 
     def onNotSameButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
-        ):
-            state.setOutcome(FeatureConsolidationOutcome(areDuplicate=False))
+        if isinstance(state, ToolNodeComparisonState):
+            state.setOutcome(ComparisonOutcome(consolidate=False))
             state.gotoNextComparison()
             return state
 
@@ -119,7 +120,7 @@ class ToolController:
 
     def onFinishedButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState):
-            if any([o is None for o in state.outcomes]):
+            if any([o is None for o in state.nodes_consolidator.node_ask_outcomes]):
                 raise ControllerInvalidState
             raise NotImplementedError
 

@@ -20,6 +20,9 @@
   "flake8.importStrategy": "fromEnvironment",
   "mypy-type-checker.importStrategy": "fromEnvironment",
   "mypy-type-checker.reportingScope": "workspace",
+  "mypy-type-checker.ignorePatterns": ["**/gui.py", "**/_lib/"],
+  "mypy-type-checker.args": ["--config-file=pyproject.toml"],
+  "mypy-type-checker.path": ["mypy"],
   "files.associations": {
     "metadata.txt": "ini"
   },
@@ -27,6 +30,7 @@
     "**/__pycache__": true,
     ".venv/": true,
     ".pytest_cache/": true,
+    ".mypy_cache/": true,
   }
 
 }
