@@ -25,4 +25,4 @@ def classFactory(iface):
 
     logger.addHandler(handler)
 
-    return OFDSDedupPlugin(iface)
+    return OFDSDedupPlugin()

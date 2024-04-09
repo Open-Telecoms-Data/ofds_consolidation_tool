@@ -17,7 +17,7 @@ from .model.comparison import NodeComparison, SpanComparison
 from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer, flatten
-from .model.network import FeatureConsolidationOutcome, Node, Span, FeatureType
+from .model.network import FeatureConsolidationOutcome, Span, FeatureType
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -172,7 +172,8 @@ class InfoPanelView:
                     <th>Value B</th>
                   </tr>
                   {
-                      "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td></tr>" for k,va,vb in table)
+                      "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td></tr>"
+                              for k,va,vb in table)
                   }
                 </table>
                 """
@@ -212,7 +213,8 @@ class LayerSelectView:
         self.startButton = startButton
 
     def _populateSelectionDropdowns(self, layers: List[QgsVectorLayer]):
-        # Populate the drop-down boxes (aka ComboBox) with the layers loaded into the project
+        # Populate the drop-down boxes (aka ComboBox)
+        # with the layers loaded into the project
         for ncb in self.nodesComboBoxes:
             ncb.clear()
             for layer in layers:

@@ -1,10 +1,10 @@
-from typing import ClassVar, TypeVar, Generic, List, Union, Tuple
+from typing import ClassVar, List, Union, Tuple
 from enum import Enum
 
 from qgis.core import QgsVectorLayer
 
-from ..model.comparison import NodeComparison, SpanComparison
-from ..model.network import FeatureConsolidationOutcome, Network, Node, Span
+from ..model.comparison import NodeComparison
+from ..model.network import FeatureConsolidationOutcome, Network
 
 
 class ToolInvalidState(Exception):
@@ -17,9 +17,7 @@ class ToolStateEnum(str, Enum):
     """
 
     READY_FOR_SELECTION = "READY_FOR_SELECTION"
-    GATHERING_NODE_COMPARISONS = "GATHERING_NODE_COMPARISONS"
     COMPARING_NODES = "COMPARING_NODES"
-    GATHERING_SPAN_COMPARISONS = "GATHERING_SPAN_COMPARISONS"
     COMPARING_SPANS = "COMPARING_SPANS"
     OUTPUT = "OUTPUT"
 
@@ -36,16 +34,13 @@ class ToolLayerSelectState(AbstractToolState):
         self.selectableLayers = selectableLayers
 
 
-FT = TypeVar("FT", Node, Span)  # FeatureT
-FCT = TypeVar("FCT", NodeComparison, SpanComparison)  # FeatureComparisonT
-
-
-class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
+class ToolNodeComparisonState:
+    state = ToolStateEnum.COMPARING_NODES
     # Networks
     networks: Tuple[Network, Network]
 
     # Features for consolidation comparison
-    comparisons: List[FCT]
+    comparisons: List[NodeComparison]
 
     # Outcome for each comparison,
     # outcomes is a list the same length as comparisons, with all values initially None
@@ -58,10 +53,11 @@ class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
     def __init__(
         self,
         networks: Tuple[Network, Network],
-        comparisons: List[FCT],
+        comparisons: List[NodeComparison],
     ):
         if len(comparisons) < 1:
-            # FIXME: Is 0 comparisons ever valid? Should be allowed? Jump straight to output?
+            # FIXME: Is 0 comparisons ever valid? Should be allowed? Jump straight
+            # to output?
             raise ToolInvalidState
 
         self.networks = networks
@@ -95,7 +91,7 @@ class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
         return len([o for o in self.outcomes if o is not None])
 
     @property
-    def currentComparison(self) -> FCT:
+    def currentComparison(self) -> NodeComparison:
         return self.comparisons[self.current]
 
     @property
@@ -103,11 +99,7 @@ class GenericToolComparisonState(Generic[FT, FCT], AbstractToolState):
         return self.outcomes[self.current]
 
 
-class ToolNodeComparisonState(GenericToolComparisonState[Node, NodeComparison]):
-    state = ToolStateEnum.COMPARING_NODES
-
-
-class ToolSpanComparisonState(GenericToolComparisonState[Span, SpanComparison]):
+class ToolSpanComparisonState(AbstractToolState):
     state = ToolStateEnum.COMPARING_SPANS
 
 

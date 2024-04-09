@@ -3,8 +3,6 @@ from typing import List, cast
 import logging
 from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 
-from ..consolidation import createNewNetworksWithConsolidatedNodes
-
 from ..gui import Ui_OFDSDedupToolDialog
 from .model.network import FeatureConsolidationOutcome, Network
 from .viewmodel.state import (
@@ -123,17 +121,9 @@ class ToolController:
         if isinstance(state, ToolNodeComparisonState):
             if any([o is None for o in state.outcomes]):
                 raise ControllerInvalidState
-            newNetworks = createNewNetworksWithConsolidatedNodes(
-                self.project,
-                state.networks[0],
-                state.networks[1],
-                nodeComparisonsOutcomes=[
-                    (state.comparisons[i], state.outcomes[i])  # type: ignore
-                    for i in range(state.nTotal)
-                ],
-            )
+            raise NotImplementedError
 
-            return ToolSpanComparisonState(newNetworks, ...)  # TODO
+            # return ToolSpanComparisonState(newNetworks, ...)  # TODO
         elif isinstance(state, ToolSpanComparisonState):
             raise NotImplementedError  # TODO
 
