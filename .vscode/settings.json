@@ -22,5 +22,11 @@
   "mypy-type-checker.reportingScope": "workspace",
   "files.associations": {
     "metadata.txt": "ini"
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    ".venv/": true,
+    ".pytest_cache/": true,
   }
+
 }
