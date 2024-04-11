@@ -1,3 +1,5 @@
+import json
+
 from enum import Enum
 from typing import Any, Dict, List
 
@@ -45,37 +47,43 @@ class Node(Feature):
     def get(self, k):
         """
         Override get to access the properties.
+        Parses nested dicts again because QGIS can't handle them.
         Also some shortcuts to properties we know we're comparing.
         """
-        if k == "location/address/country":
-            # Return location/address/country
-            return self.properties.get("location", {}).get("address", {}).get("country")
-        if k == "location/address/streetAddress":
-            return (
-                self.properties.get("location", {})
-                .get("address", {})
-                .get("streetAddress")
-            )
-        if k == "location/address/postalCode":
-            return (
-                self.properties.get("location", {}).get("address", {}).get("postalCode")
-            )
-        if k == "location/address/region":
-            return self.properties.get("location", {}).get("address", {}).get("region")
-        if k == "location/address/locality":
-            return (
-                self.properties.get("location", {}).get("address", {}).get("locality")
-            )
+        if k.startswith("location/address"):
+            l = self.properties.get("location", "{}")
+            location = json.loads(l)
+            address = location.get("address")
+            if address:
+                if k == "location/address/country":
+                    return address.get("country")
+                if k == "location/address/streetAddress":
+                    return address.get("streetAddress")
+                if k == "location/address/postalCode":
+                    return address.get("postalCode")
+                if k == "location/address/region":
+                    return address.get("region")
+                if k == "location/address/locality":
+                    return address.get("locality")
+            else:
+                return None
         if k == "phase/name":
-            return self.properties.get("phase", {}).get("name")
+            p = self.properties.get("phase", "{}")
+            phase = json.loads(p)
+            return phase.get("name")
         if k == "physicalInfrastructureProvider":
-            # Return physicalInfrastructureProvider/name
-            return self.properties.get("physicalInfrastructureProvider", {}).get("name")
+            # Only compare name, id is irrelevant
+            pip = self.properties.get("physicalInfrastructureProvider", "{}")
+            pip_name = json.loads(pip)
+            return pip_name.get("name")
         if k == "networkProviders":
             # Return a list of the names in the array, as ids are irrelevant
-            return [
-                np.get("name") for np in self.properties.get("networkProviders", [])
-            ]
+            nps = self.properties.get("networkProviders", "[]")
+            providers = json.loads(nps)
+            names = []
+            for np in providers:
+                names.append(np.get("name"))
+            return names
 
         return self.properties.get(k)
 
