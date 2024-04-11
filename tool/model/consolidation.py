@@ -34,6 +34,7 @@ class NetworkNodesConsolidator:
 
     merge_threshold: int
     ask_threshold: int
+    match_radius_km: float
 
     nodes: List[Node]
     # spans: List[Span]
@@ -49,11 +50,13 @@ class NetworkNodesConsolidator:
         network_b: Network,
         merge_above: int = 100,
         ask_above: int = 0,
+        match_radius_km: float = 10.0,
     ):
         self.network_a = network_a
         self.network_b = network_b
         self.merge_threshold = merge_above
         self.ask_threshold = ask_above
+        self.match_radius_km = match_radius_km
         self.nodes = []
         self.node_comparisons = []
         self.node_ask_comparisons = []
