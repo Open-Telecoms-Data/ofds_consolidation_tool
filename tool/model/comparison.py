@@ -221,6 +221,12 @@ class NodeComparison(Comparison):
 
         return self._point_distance_km(point_a, point_b)
 
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, NodeComparison):
+            return self.node_a == value.node_a and self.node_b == value.node_b
+        else:
+            raise ValueError("Can't test equality with non-NodeComparison")
+
 
 @dataclass
 class SpanComparison(Comparison):

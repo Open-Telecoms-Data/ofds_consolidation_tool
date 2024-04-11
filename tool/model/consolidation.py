@@ -43,9 +43,6 @@ class NetworkNodesConsolidator:
         Create NodeComparisons, and check for either auto-merging or give to the UI to
         ask the user.
         """
-        # TODO - this compares every node with every other node
-        # - needs replacing with code to only compare to nearest neighbours instead
-
         for a_node in self.network_a.nodes:
             for b_node in self.network_b.nodes:
                 comparison = NodeComparison(a_node, b_node)

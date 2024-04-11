@@ -101,8 +101,8 @@ class ToolController:
 
     def onSameButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState):
-            state.setOutcomeConsolidate()
-            state.gotoNextComparison()
+            if state.setOutcomeConsolidate():
+                state.gotoNextComparison()
             return state
 
         else:
