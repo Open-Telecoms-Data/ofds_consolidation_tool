@@ -16,7 +16,7 @@ ALL_NODE_PROPERTIES = [
     "accessPoint",
     "power",
     "status",
-    "location/coordinates",
+    "coordinates",
     "location/address/streetAddress",
     "location/address/locality",
     "location/address/region",
@@ -54,7 +54,7 @@ class Comparison:
             "accessPoint": 0.6,
             "power": 0.5,
             "status": 0.2,
-            "location/coordinates": 1,
+            "coordinates": 1,
             "location/address/streetAddress": 0.9,
             "location/address/locality": 0.75,
             "location/address/region": 0.1,
@@ -176,6 +176,7 @@ class NodeComparison(Comparison):
                 node_a.get("location/address/locality"),
                 node_b.get("location/address/locality"),
             ),
+            "coordinates": self.compare_proximity(),
             "phase/name": self.compare_strings(
                 node_a.get("phase/name"), node_b.get("phase/name")
             ),
@@ -223,6 +224,12 @@ class NodeComparison(Comparison):
             return self.node_a == value.node_a and self.node_b == value.node_b
         else:
             raise ValueError("Can't test equality with non-NodeComparison")
+
+
+    def compare_proximity(self):
+        """ Score based on distance between nodes. """
+        min_to_score = 50 # We can fine tune if need be.
+        return 0 if self.distance_km > min_to_score else 1 - self.distance_km / min_to_score
 
 
 @dataclass

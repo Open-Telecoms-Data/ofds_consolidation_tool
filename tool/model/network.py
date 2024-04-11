@@ -82,6 +82,8 @@ class Node(Feature):
                     return address.get("locality")
             else:
                 return None
+        if k == "coordinates":
+            return self.feature.geometry().asPoint().toString()
         if k == "phase/name":
             phase = self.properties.get("phase", {})
             try:
