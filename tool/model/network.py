@@ -47,13 +47,18 @@ class Node(Feature):
     def get(self, k):
         """
         Override get to access the properties.
-        Parses nested dicts again because QGIS can't handle them.
+        Parses nested dicts again because QGIS sometimes can't handle them.
+        (Whether or not it does depends on underlying libraraies, so we have to
+        prepare for both eventualities.)
         Also some shortcuts to properties we know we're comparing.
         """
         if k.startswith("location/address"):
-            l = self.properties.get("location", "{}")
-            location = json.loads(l)
-            address = location.get("address")
+            location = self.properties.get("location", {})
+            try:
+                address = location.get("address", {})
+            except AttributeError:
+                location_json = json.loads(l)
+                address = location_json.get("address")
             if address:
                 if k == "location/address/country":
                     return address.get("country")
@@ -68,21 +73,29 @@ class Node(Feature):
             else:
                 return None
         if k == "phase/name":
-            p = self.properties.get("phase", "{}")
-            phase = json.loads(p)
-            return phase.get("name")
+            phase = self.properties.get("phase", {})
+            try:
+                return phase.get("name")
+            except AttributeError:
+                phase_json = json.loads(phase)
+                return phase_json.get("name")
         if k == "physicalInfrastructureProvider":
             # Only compare name, id is irrelevant
-            pip = self.properties.get("physicalInfrastructureProvider", "{}")
-            pip_name = json.loads(pip)
-            return pip_name.get("name")
+            pip = self.properties.get("physicalInfrastructureProvider", {})
+            try:
+                return pip.get("name")
+            except AttributeError:
+                pip_json = json.loads(pip)
+                return pip_json.get("name")
         if k == "networkProviders":
             # Return a list of the names in the array, as ids are irrelevant
-            nps = self.properties.get("networkProviders", "[]")
-            providers = json.loads(nps)
+            nps = self.properties.get("networkProviders", [])
             names = []
-            for np in providers:
-                names.append(np.get("name"))
+            try:
+                for np in nps:
+                    names.append(np.get("name"))
+            except AttributeError:
+                nps_json = json.loads(nps)
             return names
 
         return self.properties.get(k)
