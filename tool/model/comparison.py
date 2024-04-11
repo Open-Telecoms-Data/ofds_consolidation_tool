@@ -85,13 +85,13 @@ class Comparison:
         self.confidence = self.total / highest * 100
 
     def get_high_scoring_properties(self):
+        # Return scores that are over 0.5 - this is arbitrary, may want to increase
         return [k for k, v in self.scores.items() if v > 0.5]
 
     def compare_equals(self, first, second):
-        if first == second:
+        if first == second and first is not None:
             return 1
-        else:
-            return 0
+        return 0
 
     def compare_strings(self, first, second):
         if first is None or second is None:
@@ -101,7 +101,7 @@ class Comparison:
     def compare_array_codelist(self, first, second):
         first.sort()
         second.sort()
-        return 1 if first == second else 0
+        return 1 if first == second and first != [] else 0
 
     def compare_types(self, first, second):
         # TODO: this might be more complex as the value is a union of types from all
@@ -153,9 +153,6 @@ class NodeComparison(Comparison):
         self.node_b = node_b
         self.weights = weights if weights else self.default_weights()
 
-        # TODO: currently this will score low if one is missing - what we actually need
-        #       is not to score it at all
-        # TODO: we get a strong match if both are missing - should not be counted
         self.scores = {
             "name": self.compare_strings(node_a.get("name"), node_b.get("name")),
             "type": self.compare_types(node_a.get("type"), node_b.get("type")),
