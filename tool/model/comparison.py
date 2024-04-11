@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
-from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea
+from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea, QgsUnitTypes
 from .network import Node, Span
 
 from ..._lib.jellyfish import _jellyfish as jellyfish
@@ -204,9 +204,12 @@ class NodeComparison(Comparison):
         calc = QgsDistanceArea()
         calc.setEllipsoid("WGS84")
 
-        dist_meters = calc.measureLine(point_a, point_b)
+        dist = calc.measureLine(point_a, point_b)
+        dist_km = calc.convertLengthMeasurement(
+            dist, QgsUnitTypes.DistanceUnit.DistanceKilometers
+        )
 
-        return dist_meters / 1000.0
+        return dist_km
 
     @property
     def distance_km(self):
