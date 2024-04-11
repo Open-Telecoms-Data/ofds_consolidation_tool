@@ -48,8 +48,9 @@ class NetworkNodesConsolidator:
 
         for a_node in self.network_a.nodes:
             for b_node in self.network_b.nodes:
-                # TODO: Check distance here
                 comparison = NodeComparison(a_node, b_node)
+                if comparison.distance_km > self.match_radius_km:
+                    continue
 
                 if comparison.confidence >= self.merge_threshold:
                     # Auto-consolidate

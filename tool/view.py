@@ -175,9 +175,12 @@ class InfoPanelView:
 
         # Display Node info
         info_html = f"""
-        <h1>Overall Confidence: {int(comparison.confidence)}%</h1>
+        <h2>Overall Confidence: {int(comparison.confidence)}%</h2>
+
+        <p>Distance (km): {comparison.distance_km:.2f}</p>
 
         <h2>Similar Properties</h2>
+
 
         <table>
           <tr>

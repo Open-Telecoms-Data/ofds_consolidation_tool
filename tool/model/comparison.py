@@ -213,14 +213,8 @@ class NodeComparison(Comparison):
 
     @property
     def distance_km(self):
-        assert (
-            self.node_a.feature.geometry().wkbType()
-            == QgsWkbTypes.GeometryType.PointGeometry
-        )
-        assert (
-            self.node_b.feature.geometry().wkbType()
-            == QgsWkbTypes.GeometryType.PointGeometry
-        )
+        assert self.node_a.feature.geometry().wkbType() == QgsWkbTypes.Type.Point
+        assert self.node_b.feature.geometry().wkbType() == QgsWkbTypes.Type.Point
 
         point_a = self.node_a.feature.geometry().asPoint()
         point_b = self.node_b.feature.geometry().asPoint()
