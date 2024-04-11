@@ -14,7 +14,12 @@ from PyQt5.QtWidgets import (
 from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
 from qgis.gui import QgsMapCanvas
 
-from .model.comparison import ALL_NODE_PROPERTIES, NodeComparison, SpanComparison
+from .model.comparison import (
+    ALL_NODE_PROPERTIES,
+    ConsolidationReason,
+    NodeComparison,
+    SpanComparison,
+)
 from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer
@@ -306,6 +311,8 @@ class NodeComparisonView:
     progressLabel: QLabel
     progressBar: QProgressBar
 
+    finishButton: QPushButton
+
     def __init__(
         self,
         project: QgsProject,
@@ -317,6 +324,7 @@ class NodeComparisonView:
         prevButton: QPushButton,
         progressLabel: QLabel,
         progressBar: QProgressBar,
+        finishButton: QPushButton,
     ):
         osmLayer = getOpenStreetMapLayer(project)
         self.mapViews = (
@@ -330,6 +338,7 @@ class NodeComparisonView:
         self.prevButton = prevButton
         self.progressLabel = progressLabel
         self.progressBar = progressBar
+        self.finishButton = finishButton
 
     def _updateComparing(self, state: ToolNodeComparisonState):
         """
@@ -357,8 +366,10 @@ class NodeComparisonView:
             self.notSameButton.setEnabled(True)
 
         else:
-            self.sameButton.setEnabled(not outcome.consolidate)
-            self.notSameButton.setEnabled(outcome.consolidate)
+            self.sameButton.setEnabled(
+                not isinstance(outcome.consolidate, ConsolidationReason)
+            )
+            self.notSameButton.setEnabled(not (outcome.consolidate is False))
 
         self.nextButton.setEnabled(True)
         self.prevButton.setEnabled(True)
@@ -371,6 +382,8 @@ class NodeComparisonView:
         self.progressBar.setMaximum(state.nTotal)
         self.progressBar.setValue(state.nCompared)
         self.progressBar.setFormat("%v of %m compared")
+
+        self.finishButton.setEnabled(state.all_compared)
 
     def _updateNotComparing(self):
         """
@@ -391,6 +404,8 @@ class NodeComparisonView:
         self.progressLabel.setText("")
         self.progressBar.setEnabled(False)
         self.progressBar.setFormat("")
+
+        self.finishButton.setEnabled(False)
 
     def update(self, state: ToolState):
         if isinstance(state, ToolNodeComparisonState):
@@ -432,6 +447,7 @@ class ToolView:
             prevButton=ui.prevNodesButton,
             progressLabel=ui.comparisonLabel,
             progressBar=ui.comparisonProgressBar,
+            finishButton=ui.finishedNodesButton,
         )
 
         self.tabWidget = ui.tabWidget

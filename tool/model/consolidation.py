@@ -1,27 +1,7 @@
-from itertools import repeat
-from typing import List, Optional
-from dataclasses import dataclass
-
-from .exceptions import ModelInvalidState
+from typing import List, Set, Tuple
 
 from .network import Node, Network
-from .comparison import NodeComparison, ComparisonOutcome
-
-
-@dataclass(frozen=True)
-class ConsolidationReason:
-    """
-    When two features are merged, this represents the relevant metadata.
-    ie. ids of the two features, the confidence score, and a list of the
-    properties with high similarity as the rationale.
-    """
-
-    feature_type: str
-    primary_node: Node
-    secondary_node: Node
-    confidence: float
-    matching_properties: List[str]
-    manual: bool = False
+from .comparison import NodeComparison, ComparisonOutcome, ConsolidationReason
 
 
 class NetworkNodesConsolidator:
@@ -36,13 +16,9 @@ class NetworkNodesConsolidator:
     ask_threshold: int
     match_radius_km: float
 
-    nodes: List[Node]
-    # spans: List[Span]
-    node_comparisons: List[NodeComparison]
-    node_ask_comparisons: List[NodeComparison]
-    node_ask_outcomes: List[Optional[ComparisonOutcome]]
-    # span_comparisons: List[SpanComparison]
-    provenance: List[ConsolidationReason]
+    user_comparisons: List[NodeComparison]
+
+    nodes: Set[Tuple[Node, ComparisonOutcome]]
 
     def __init__(
         self,
@@ -57,10 +33,8 @@ class NetworkNodesConsolidator:
         self.merge_threshold = merge_above
         self.ask_threshold = ask_above
         self.match_radius_km = match_radius_km
-        self.nodes = []
-        self.node_comparisons = []
-        self.node_ask_comparisons = []
-        self.provenance = []
+        self.nodes = set()
+        self.user_comparisons = []
 
         self._compare_nodes()
 
@@ -74,59 +48,51 @@ class NetworkNodesConsolidator:
 
         for a_node in self.network_a.nodes:
             for b_node in self.network_b.nodes:
+                # TODO: Check distance here
                 comparison = NodeComparison(a_node, b_node)
 
                 if comparison.confidence >= self.merge_threshold:
-                    self._consolidate_node_pair(comparison, manual=False)
+                    # Auto-consolidate
+                    matching_properties = comparison.get_high_scoring_properties()
+                    reason = ConsolidationReason(
+                        feature_type="NODE",
+                        primary_node=comparison.node_a,
+                        secondary_node=comparison.node_b,
+                        confidence=comparison.confidence,
+                        matching_properties=matching_properties,
+                        manual=False,
+                    )
+                    outcome = ComparisonOutcome(consolidate=reason)
+                    self.nodes.add((reason.primary_node, outcome))
 
                 elif comparison.confidence >= self.ask_threshold:
-                    self.node_ask_comparisons.append(comparison)
+                    #   todo: get user pref for which network to keep
+                    #   todo: ability to merge rather than replace? (stretch goal)
+                    self.user_comparisons.append(comparison)
 
-        self.node_ask_outcomes = list(repeat(None, len(self.node_ask_comparisons)))
+    def get_comparisons_to_ask_user(self) -> List[NodeComparison]:
+        return self.user_comparisons
 
-    def _consolidate_node_pair(self, comparison: NodeComparison, manual: bool):
-        #   todo: get user pref for which network to keep
-        #   todo: ability to merge rather than replace? (stretch goal)
-        matching_properties = comparison.get_high_scoring_properties()
-        reason = ConsolidationReason(
-            feature_type="NODE",
-            primary_node=comparison.node_a,
-            secondary_node=comparison.node_b,
-            confidence=comparison.confidence,
-            matching_properties=matching_properties,
-            manual=manual,
-        )
-        self.provenance.append(reason)
-        if reason.primary_node not in self.nodes:
-            self.nodes.append(reason.primary_node)
-
-    def finalise_asked_nodes(self):
+    def finalise_with_user_comparison_outcomes(
+        self, user_comparison_outcomes: List[Tuple[NodeComparison, ComparisonOutcome]]
+    ):
         """
         This method should be called after the user has been asked about all manual
         comparisons, and implements the results i.e. consolidating (or not) and adding
         to the consolidated network.
         """
-        for i in range(len(self.node_ask_comparisons)):
-            comparison: NodeComparison = self.node_ask_comparisons[i]
-            should_consolidate = self.node_ask_outcomes[i]
+        for comparison, outcome in user_comparison_outcomes:
+            if isinstance(outcome.consolidate, ConsolidationReason):
+                self.nodes.add((outcome.consolidate.primary_node, outcome))
 
-            if should_consolidate is None:
-                raise ModelInvalidState("Found unfinished nodes comparison")
-
-            if should_consolidate:
-                self._consolidate_node_pair(comparison, manual=True)
             else:
                 # no match: keep both
-                if comparison.node_a not in self.nodes:
-                    self.nodes.append(comparison.node_a)
-                if comparison.node_b not in self.nodes:
-                    self.nodes.append(comparison.node_b)
+                self.nodes.add((comparison.node_a, outcome))
+                self.nodes.add((comparison.node_b, outcome))
 
-    def count_comparisons(self):
-        return len(self.node_comparisons)
-
-    def count_merged(self):
-        return len(self.provenance)
+    def get_consolidated_network(self):
+        # TODO
+        raise NotImplementedError
 
 
 # TODO

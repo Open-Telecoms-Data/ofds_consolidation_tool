@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, Union
 from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea, QgsUnitTypes
 from .network import Node, Span
 
@@ -269,9 +269,26 @@ class SpanComparison(Comparison):
 
 
 @dataclass(frozen=True)
+class ConsolidationReason:
+    """
+    When two features are merged, this represents the relevant metadata.
+    ie. ids of the two features, the confidence score, and a list of the
+    properties with high similarity as the rationale.
+    """
+
+    feature_type: str
+    primary_node: Node
+    secondary_node: Node
+    confidence: float
+    matching_properties: List[str]
+    manual: bool = False
+
+
+@dataclass(frozen=True)
 class ComparisonOutcome:
     """
     Represents the outcome of the comparison of two features by the user.
     """
 
-    consolidate: bool
+    # Consolidate is either False, or an instance of ConsolidationReason
+    consolidate: Union[Literal[False], ConsolidationReason]
