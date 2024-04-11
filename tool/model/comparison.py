@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
+from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea
 from .network import Node, Span
 
 from ..._lib.jellyfish import _jellyfish as jellyfish
@@ -197,11 +198,31 @@ class NodeComparison(Comparison):
         self.calculate_total()
         self.calculate_confidence()
 
-    def compare_point_proximity(self, first, second):
-        # TODO
-        # Return a higher score the closer together two points are.
-        # Thresholds tbd
-        pass
+    @classmethod
+    def _point_distance_km(self, point_a: QgsPointXY, point_b: QgsPointXY) -> float:
+        """Calculate the distance between two points, in kilometers."""
+        calc = QgsDistanceArea()
+        calc.setEllipsoid("WGS84")
+
+        dist_meters = calc.measureLine(point_a, point_b)
+
+        return dist_meters / 1000.0
+
+    @property
+    def distance_km(self):
+        assert (
+            self.node_a.feature.geometry().wkbType()
+            == QgsWkbTypes.GeometryType.PointGeometry
+        )
+        assert (
+            self.node_b.feature.geometry().wkbType()
+            == QgsWkbTypes.GeometryType.PointGeometry
+        )
+
+        point_a = self.node_a.feature.geometry().asPoint()
+        point_b = self.node_b.feature.geometry().asPoint()
+
+        return self._point_distance_km(point_a, point_b)
 
 
 @dataclass
