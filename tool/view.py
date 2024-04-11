@@ -378,7 +378,9 @@ class NodeComparisonView:
         self.prevButton.setEnabled(True)
 
         self.progressLabel.setText(
-            "Nodes" if state.state == ToolStateEnum.COMPARING_NODES else "Spans"
+            f"Node Comparison {state.current+1} of {state.nTotal}"
+            if state.state == ToolStateEnum.COMPARING_NODES
+            else "Span"
         )
         self.progressBar.setEnabled(True)
         self.progressBar.setMinimum(0)

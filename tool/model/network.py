@@ -39,6 +39,12 @@ class Feature:
         # Enable Nodes/Spans to be put in a Set or Dict
         return hash(self.id)
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Feature):
+            return self.id == other.id
+        else:
+            raise ValueError("Can't compare Feature to non-Feature")
+
 
 class Node(Feature):
     featureType = FeatureType.NODE
@@ -104,9 +110,13 @@ class Node(Feature):
 
         return self.properties.get(k)
 
+    @property
+    def name(self) -> str:
+        """Human readable name"""
+        return self.properties["name"] if "name" in self.properties else self.id
+
     def __str__(self):
-        name = self.properties["name"] if "name" in self.properties else self.id
-        return f"<Node {name}>"
+        return f"<Node {self.name}>"
 
 
 class Span(Feature):
