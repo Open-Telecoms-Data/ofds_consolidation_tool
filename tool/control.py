@@ -7,7 +7,6 @@ from .model.consolidation import NetworkNodesConsolidator
 
 from ..gui import Ui_OFDSDedupToolDialog
 from .model.network import Network
-from .model.comparison import ComparisonOutcome
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -102,7 +101,7 @@ class ToolController:
 
     def onSameButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState):
-            state.setOutcome(ComparisonOutcome(consolidate=True))
+            state.setOutcomeConsolidate()
             state.gotoNextComparison()
             return state
 
@@ -111,7 +110,7 @@ class ToolController:
 
     def onNotSameButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState):
-            state.setOutcome(ComparisonOutcome(consolidate=False))
+            state.setOutcomeDontConsolidate()
             state.gotoNextComparison()
             return state
 
@@ -120,7 +119,7 @@ class ToolController:
 
     def onFinishedButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState):
-            if any([o is None for o in state.nodes_consolidator.node_ask_outcomes]):
+            if not state.all_compared:
                 raise ControllerInvalidState
             raise NotImplementedError
 

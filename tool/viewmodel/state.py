@@ -4,7 +4,7 @@ from enum import Enum
 from qgis.core import QgsVectorLayer
 
 from ..model.consolidation import NetworkNodesConsolidator
-from ..model.comparison import NodeComparison, ComparisonOutcome
+from ..model.comparison import ConsolidationReason, NodeComparison, ComparisonOutcome
 from ..model.network import Network
 
 
@@ -45,6 +45,7 @@ class ToolNodeComparisonState(AbstractToolState):
 
     # Consolidator
     nodes_consolidator: NetworkNodesConsolidator
+    comparisons_outcomes: List[Tuple[NodeComparison, Union[None, ComparisonOutcome]]]
 
     # Keep track of which pair we're looking at now
     current: int
@@ -56,10 +57,17 @@ class ToolNodeComparisonState(AbstractToolState):
     ):
         self.networks = networks
         self.nodes_consolidator = nodes_consolidator
+        self.comparisons_outcomes = [
+            (comparison, None)
+            for comparison in self.nodes_consolidator.get_comparisons_to_ask_user()
+        ]
         self.current = 0
 
     def __str__(self):
-        return f"<ToolNodeComparisonState total={self.nTotal} compared={self.nCompared} current={self.current}>"
+        return (
+            f"<ToolNodeComparisonState total={self.nTotal}"
+            + f"compared={self.nCompared} current={self.current}>"
+        )
 
     def gotoNextComparison(self):
         new_current = self.current + 1
@@ -73,31 +81,55 @@ class ToolNodeComparisonState(AbstractToolState):
             new_current = self.nTotal - 1
         self.current = new_current
 
-    def setOutcome(self, outcome: ComparisonOutcome):
-        if outcome.consolidate:
-            self.nodes_consolidator.node_ask_outcomes[self.current] = outcome
+    def setOutcomeConsolidate(self):
+        comparison = self.currentComparison
+        assert comparison is not None
+        reason = ConsolidationReason(
+            feature_type="NODE",
+            primary_node=comparison.node_a,
+            secondary_node=comparison.node_b,
+            confidence=comparison.confidence,
+            matching_properties=comparison.get_high_scoring_properties(),
+            manual=True,
+        )
+        self.comparisons_outcomes[self.current] = (
+            comparison,
+            ComparisonOutcome(consolidate=reason),
+        )
+
+    def setOutcomeDontConsolidate(self):
+        comparison = self.currentComparison
+        assert comparison is not None
+        self.comparisons_outcomes[self.current] = (
+            comparison,
+            ComparisonOutcome(consolidate=False),
+        )
 
     @property
     def nTotal(self) -> int:
-        return len(self.nodes_consolidator.node_ask_comparisons)
+        return len(self.comparisons_outcomes)
 
     @property
     def nCompared(self) -> int:
         return len(
-            [o for o in self.nodes_consolidator.node_ask_outcomes if o is not None]
+            [1 for (_, outcome) in self.comparisons_outcomes if outcome is not None]
         )
+
+    @property
+    def all_compared(self) -> bool:
+        return all(outcome is not None for (_, outcome) in self.comparisons_outcomes)
 
     @property
     def currentComparison(self) -> Union[None, NodeComparison]:
         try:
-            return self.nodes_consolidator.node_ask_comparisons[self.current]
+            return self.comparisons_outcomes[self.current][0]
         except IndexError:
             return None
 
     @property
     def currentOutcome(self) -> Union[None, ComparisonOutcome]:
         try:
-            return self.nodes_consolidator.node_ask_outcomes[self.current]
+            return self.comparisons_outcomes[self.current][1]
         except IndexError:
             return None
 

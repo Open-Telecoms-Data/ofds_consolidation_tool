@@ -35,6 +35,10 @@ class Feature:
             raise OFDSInvalidFeature
         self.id = self.properties["id"]
 
+    def __hash__(self) -> int:
+        # Enable Nodes/Spans to be put in a Set or Dict
+        return hash(self.id)
+
 
 class Node(Feature):
     featureType = FeatureType.NODE
