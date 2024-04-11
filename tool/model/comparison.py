@@ -30,22 +30,6 @@ ALL_NODE_PROPERTIES = [
 ]
 
 
-@dataclass(frozen=True)
-class ConsolidationReason:
-    """
-    When two features are merged, this represents the relevant metadata.
-    ie. ids of the two features, the confidence score, and a list of the
-    properties with high similarity as the rationale.
-    """
-
-    feature_type: str
-    primary_id: str
-    secondary_id: str
-    confidence: float
-    matching_properties: List[str]
-    manual: bool = False
-
-
 class Comparison:
     """
     Generalised comparision class for things that are common between Node and
@@ -109,11 +93,6 @@ class Comparison:
             return 0
 
     def compare_strings(self, first, second):
-        # jellyfish is better than difflib, and have imported the pure python
-        # version explicitly, but this is due to be deprecated. difflib will do if we
-        # need to switch to it, use:
-        # s = SequenceMatcher(None, first, second)
-        # return s.ratio()
         if first is None or second is None:
             return 0
         return jellyfish.jaro_winkler_similarity(first, second)
