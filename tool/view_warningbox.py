@@ -26,9 +26,9 @@ def show_node_consolidation_warning(
             f"The node {a_or_b} {node.name} (id = {node.id}"
             + " has already been marked as the same as another node"
             + f" {other_node.name} (id = {other_node.id})).\n"
-            + f" If you mark  this node as the same instead, this will
-            + f" override your previous match.\n"
-            + f"Are you sure?"
+            + " If you mark  this node as the same instead, this will"
+            + " override your previous match.\n"
+            + "Are you sure?"
         )
     )
     msg.setStandardButtons(
