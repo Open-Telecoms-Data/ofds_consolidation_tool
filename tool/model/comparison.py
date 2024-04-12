@@ -98,17 +98,34 @@ class Comparison:
             return 0
         return jellyfish.jaro_winkler_similarity(first, second)
 
-    def compare_array_codelist(self, first, second):
-        first.sort()
-        second.sort()
+    def compare_array_codelist_equals(self, first, second):
+        """ Score arrays 1 if they are identical, 0 if not. """
+        list(first).sort()
+        list(second).sort()
         return 1 if first == second and first != [] else 0
 
+    def compare_array_codelist_matches(self, first, second):
+        """ Score arrays on a scale based on amount of overlap. """
+        first = set(first)
+        second = set(second)
+        intersection = first & second
+        difference = first ^ second
+        union = first | second
+        if self.compare_array_codelist_equals(first, second):
+            # Full marks if they're identical
+            return 1
+        if len(intersection) == 0:
+            # No marks if no overlap at all
+            return 0
+        # If more values the same than different, return a middling score
+        if len(intersection) - len(difference) > 0:
+            return 0.75
+        # Else return a low score - still some overlap.
+        # This is very crude, should refine after seeing more data.
+        return 0.25
+
     def compare_types(self, first, second):
-        # TODO: this might be more complex as the value is a union of types from all
-        #       network providers.
-        # So we may need a more nuanced approach to comparison in case one dataset is
-        # missing a provider
-        return self.compare_array_codelist(first, second)
+        return self.compare_array_codelist_matches(first, second)
 
     def compare_networkProviders(self, first, second):
         first.sort()
