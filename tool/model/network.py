@@ -111,6 +111,38 @@ class Node(Feature):
                 for np in nps_json:
                     names.append(np.get("name"))
             return names
+        if k.startswith("internationalConnections/"):
+            ics = self.properties.get("internationalConnections", [])
+            addresses = []
+            regions = []
+            countries = []
+            localities = []
+            postcodes = []
+            try:
+                for ic in ics:
+                    addresses.append(ic.get("streetAddress"))
+                    regions.append(ic.get("region"))
+                    countries.append(ic.get("country"))
+                    localities.append(ic.get("locality"))
+                    postcodes.append(ic.get("postalCode"))
+            except AttributeError:
+                ics_json = json.loads(ics)
+                for ic in ics_json:
+                    addresses.append(ic.get("streetAddress"))
+                    regions.append(ic.get("region"))
+                    countries.append(ic.get("country"))
+                    localities.append(ic.get("locality"))
+                    postcodes.append(ic.get("postalCode"))
+            if k == "internationalConnections/streetAddress":
+                return addresses
+            if k == "internationalConnections/region":
+                return regions
+            if k == "internationalConnections/country":
+                return countries
+            if k == "internationalConnections/postalCode":
+                return postcodes
+            if k == "internationalConnections/locality":
+                return localities
 
         return self.properties.get(k)
 
