@@ -188,7 +188,7 @@ class ToolNodeComparisonState(AbstractToolState):
     def finish(self):
         if not self.all_compared:
             raise ToolInvalidState(
-                "Tried to finish Nodes comparison with comparing all nodes"
+                "Tried to finish Nodes comparison without comparing all nodes"
             )
 
         self.nodes_consolidator.finalise_with_user_comparison_outcomes(
