@@ -37,7 +37,7 @@ class Feature:
 
     def __hash__(self) -> int:
         # Enable Nodes/Spans to be put in a Set or Dict
-        return hash(self.id)
+        return hash((self.id, self.featureId, self.featureType))
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Feature):

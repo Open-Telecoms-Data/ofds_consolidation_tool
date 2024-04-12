@@ -1,5 +1,7 @@
 from typing import List, Set, Tuple
 
+from qgis.core import QgsVectorLayer, QgsProject
+
 from .network import Node, Network
 from .comparison import NodeComparison, ComparisonOutcome, ConsolidationReason
 
@@ -18,7 +20,7 @@ class NetworkNodesConsolidator:
 
     user_comparisons: List[NodeComparison]
 
-    nodes: Set[Tuple[Node, ComparisonOutcome]]
+    nodes: List[Tuple[Node, ComparisonOutcome]]
 
     def __init__(
         self,
@@ -33,7 +35,7 @@ class NetworkNodesConsolidator:
         self.merge_threshold = merge_above
         self.ask_threshold = ask_above
         self.match_radius_km = match_radius_km
-        self.nodes = set()
+        self.nodes = list()
         self.user_comparisons = []
 
         self._compare_nodes()
@@ -61,7 +63,7 @@ class NetworkNodesConsolidator:
                         manual=False,
                     )
                     outcome = ComparisonOutcome(consolidate=reason)
-                    self.nodes.add((reason.primary_node, outcome))
+                    self.nodes.append((reason.primary_node, outcome))
 
                 elif comparison.confidence >= self.ask_threshold:
                     #   todo: get user pref for which network to keep
@@ -81,16 +83,43 @@ class NetworkNodesConsolidator:
         """
         for comparison, outcome in user_comparison_outcomes:
             if isinstance(outcome.consolidate, ConsolidationReason):
-                self.nodes.add((outcome.consolidate.primary_node, outcome))
+                self.nodes.append((outcome.consolidate.primary_node, outcome))
 
             else:
                 # no match: keep both
-                self.nodes.add((comparison.node_a, outcome))
-                self.nodes.add((comparison.node_b, outcome))
+                self.nodes.append((comparison.node_a, outcome))
+                self.nodes.append((comparison.node_b, outcome))
 
     def get_consolidated_network(self):
-        # TODO
-        raise NotImplementedError
+        # TODO:
+        # Create a new Qgs Layer out of the Consolidated nodes
+        _ = qgis_layer_from_nodes(set([n for (n, o) in self.nodes]))
+
+
+def qgis_layer_from_nodes(nodes: Set[Node]) -> QgsVectorLayer:
+    LAYER_NAME = "_ofds_consolidated_nodes"
+
+    # TODO: Tidy up (i.e. remove) this layer after we're done
+    layer_uri = "Point?crs=epsg:4326&index=yes"
+    layer = QgsVectorLayer(layer_uri, LAYER_NAME, "memory")
+    layer.setCustomProperty("skipMemoryLayersCheck", 1)
+    driver = layer.dataProvider()
+    assert driver
+
+    for node in nodes:
+        driver.addFeature(node.feature)
+
+    project = QgsProject.instance()
+    assert project
+
+    # Remove an old intermediate layers from previous tool uses
+    if len(project.mapLayersByName(LAYER_NAME)) > 0:
+        project.removeMapLayers(project.mapLayersByName(LAYER_NAME))
+
+    # TODO: Change visibility from True to False when we're not testing anymore
+    project.addMapLayer(layer, True)
+
+    return layer
 
 
 # TODO

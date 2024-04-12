@@ -121,7 +121,7 @@ class ToolController:
         if isinstance(state, ToolNodeComparisonState):
             if not state.all_compared:
                 raise ControllerInvalidState
-            raise NotImplementedError
+            return state.finish()
 
             # return ToolSpanComparisonState(newNetworks, ...)  # TODO
         elif isinstance(state, ToolSpanComparisonState):

@@ -1,4 +1,4 @@
-from typing import ClassVar, List, Union, Tuple
+from typing import ClassVar, List, Union, Tuple, cast
 from enum import Enum
 
 
@@ -184,6 +184,22 @@ class ToolNodeComparisonState(AbstractToolState):
             return self.comparisons_outcomes[self.current][1]
         except IndexError:
             return None
+
+    def finish(self):
+        if not self.all_compared:
+            raise ToolInvalidState(
+                "Tried to finish Nodes comparison with comparing all nodes"
+            )
+
+        self.nodes_consolidator.finalise_with_user_comparison_outcomes(
+            cast(
+                List[Tuple[NodeComparison, ComparisonOutcome]],
+                self.comparisons_outcomes,
+            )
+        )
+
+        consolidated_network = self.nodes_consolidator.get_consolidated_network()
+        return ToolSpanComparisonState()
 
 
 class ToolSpanComparisonState(AbstractToolState):
