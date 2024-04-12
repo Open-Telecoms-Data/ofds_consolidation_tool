@@ -124,25 +124,34 @@ class Comparison:
         # This is very crude, should refine after seeing more data.
         return 0.25
 
+    def compare_array_strings(self, first, second):
+        """
+        Score arrays of free text strings based on string similarity.
+        """
+        scores = []
+        for f in first:
+            for s in second:
+                score = self.compare_strings(f, s)
+                # > 0.8 is a decent match but not using this fact anywhere.
+                scores.append(score)
+        # Return average scores over number of comparisons made
+        return sum(scores) / (len(first) * len(second))
+
     def compare_types(self, first, second):
         return self.compare_array_codelist_matches(first, second)
 
     def compare_networkProviders(self, first, second):
-        first.sort()
-        second.sort()
-        # TODO
-        # if functools.reduce(
-        #       lambda x, y : x and y, map(
-        #           lambda p, q: p == q,
-        #           first_names,
-        #           second_names
-        #       ),
-        #       True
-        #   ):
-        # I want to do a string comparision on the names in case of typos,
-        # but not sure if it's worth comparing everything in one list with everything
-        # in the other list.
-        pass
+        """ Expects a list of names of network providers only. """
+        if first == [] and second == []:
+            return 0
+        first = set(first)
+        second = set(second)
+        if self.compare_array_codelist_equals(first, second):
+            # Full marks if they're identical
+            return 1
+        # Else do string comparision in case of typos.
+        return self.compare_array_strings(first, second)
+
 
     def compare_internationalConnections(self, first, second):
         # TODO
@@ -205,6 +214,10 @@ class NodeComparison(Comparison):
             "physicalInfrastructureProvider": self.compare_strings(
                 node_a.get("physicalInfrastructureProvider"),
                 node_b.get("physicalInfrastructureProvider"),
+            ),
+            "networkProviders": self.compare_networkProviders(
+                node_a.get("networkProviders"),
+                node_b.get("networkProviders"),
             ),
         }
 
