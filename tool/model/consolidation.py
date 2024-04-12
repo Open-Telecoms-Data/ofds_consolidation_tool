@@ -120,7 +120,7 @@ def qgis_layer_from_nodes(nodes: Set[Node]) -> QgsVectorLayer:
 
     # Remove an old intermediate layers from previous tool uses
     if len(project.mapLayersByName(LAYER_NAME)) > 0:
-        project.removeMapLayers(project.mapLayersByName(LAYER_NAME))
+        project.removeMapLayers([LAYER_NAME])
 
     # TODO: Change visibility from True to False when we're not testing anymore
     project.addMapLayer(layer, True)
