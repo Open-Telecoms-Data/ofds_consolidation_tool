@@ -100,14 +100,16 @@ class Node(Feature):
                 pip_json = json.loads(pip)
                 return pip_json.get("name")
         if k == "networkProviders":
-            # Return a list of the names in the array, as ids are irrelevant
-            nps = self.properties.get("networkProviders", [])
+            # Return a list of the names in the array, as other properties are irrelevant
+            nps = self.properties.get("networkProviders")
             names = []
             try:
                 for np in nps:
                     names.append(np.get("name"))
             except AttributeError:
                 nps_json = json.loads(nps)
+                for np in nps_json:
+                    names.append(np.get("name"))
             return names
 
         return self.properties.get(k)
