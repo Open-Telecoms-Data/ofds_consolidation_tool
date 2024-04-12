@@ -25,6 +25,7 @@ ALL_NODE_PROPERTIES = [
     "type",
     "internationalConnections/streetAddress",
     "internationalConnections/region",
+    "internationalConnections/locality",
     "internationalConnections/postalCode",
     "internationalConnections/country",
     "networkProviders",
@@ -63,6 +64,7 @@ class Comparison:
             "type": 0.75,
             "internationalConnections/streetAddress": 0.1,
             "internationalConnections/region": 0.1,
+            "internationalConnections/locality": 0.1,
             "internationalConnections/postalCode": 0.1,
             "internationalConnections/country": 0.2,
             "networkProviders": 0.75,
@@ -128,6 +130,8 @@ class Comparison:
         """
         Score arrays of free text strings based on string similarity.
         """
+        if first == [] or second == []:
+            return 0
         scores = []
         for f in first:
             for s in second:
@@ -218,6 +222,26 @@ class NodeComparison(Comparison):
             "networkProviders": self.compare_networkProviders(
                 node_a.get("networkProviders"),
                 node_b.get("networkProviders"),
+            ),
+            "internationalConnections/streetAddress": self.compare_array_strings(
+                node_a.get("internationalConnections/streetAddress"),
+                node_b.get("internationalConnections/streetAddress"),
+            ),
+            "internationalConnections/region": self.compare_array_strings(
+                node_a.get("internationalConnections/region"),
+                node_b.get("internationalConnections/region"),
+            ),
+            "internationalConnections/locality": self.compare_array_strings(
+                node_a.get("internationalConnections/locality"),
+                node_b.get("internationalConnections/locality"),
+            ),
+            "internationalConnections/postalCode": self.compare_array_strings(
+                node_a.get("internationalConnections/postalCode"),
+                node_b.get("internationalConnections/postalCode"),
+            ),
+            "internationalConnections/country": self.compare_array_codelist_equals(
+                node_a.get("internationalConnections/country"),
+                node_b.get("internationalConnections/country"),
             ),
         }
 
