@@ -49,9 +49,15 @@ class NetworkNodesConsolidator:
             for b_node in self.network_b.nodes:
                 comparison = NodeComparison(a_node, b_node)
                 if comparison.distance_km > self.match_radius_km:
-                    continue
+                    # No chance of match, just add them both individually
+                    self.nodes.append(
+                        (comparison.node_a, ComparisonOutcome(consolidate=False))
+                    )
+                    self.nodes.append(
+                        (comparison.node_b, ComparisonOutcome(consolidate=False))
+                    )
 
-                if comparison.confidence >= self.merge_threshold:
+                elif comparison.confidence >= self.merge_threshold:
                     # Auto-consolidate
                     matching_properties = comparison.get_high_scoring_properties()
                     reason = ConsolidationReason(
