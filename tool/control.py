@@ -119,8 +119,6 @@ class ToolController:
 
     def onFinishedButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState):
-            if not state.all_compared:
-                raise ControllerInvalidState
             return state.finish()
 
             # return ToolSpanComparisonState(newNetworks, ...)  # TODO

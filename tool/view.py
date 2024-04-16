@@ -388,7 +388,7 @@ class NodeComparisonView:
         self.progressBar.setValue(state.nCompared)
         self.progressBar.setFormat("%v of %m compared")
 
-        self.finishButton.setEnabled(state.all_compared)
+        self.finishButton.setEnabled(True)
 
     def _updateNotComparing(self):
         """

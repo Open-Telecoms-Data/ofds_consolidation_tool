@@ -7,7 +7,10 @@ from qgis.core import QgsVectorLayer
 from ..model.consolidation import NetworkNodesConsolidator
 from ..model.comparison import ConsolidationReason, NodeComparison, ComparisonOutcome
 from ..model.network import Network, Node
-from ..view_warningbox import show_node_consolidation_warning
+from ..view_warningbox import (
+    show_node_incomplete_consolidation_warning,
+    show_node_multi_consolidation_warning,
+)
 
 
 class ToolInvalidState(Exception):
@@ -111,7 +114,7 @@ class ToolNodeComparisonState(AbstractToolState):
         for other_i, other_node in other_comparisons_with_node_a:
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
-                if not show_node_consolidation_warning(
+                if not show_node_multi_consolidation_warning(
                     "A", comparison.node_a, other_node
                 ):
                     return False
@@ -119,7 +122,7 @@ class ToolNodeComparisonState(AbstractToolState):
         for other_i, other_node in other_comparisons_with_node_b:
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
-                if not show_node_consolidation_warning(
+                if not show_node_multi_consolidation_warning(
                     "B", comparison.node_b, other_node
                 ):
                     return False
@@ -187,9 +190,20 @@ class ToolNodeComparisonState(AbstractToolState):
 
     def finish(self):
         if not self.all_compared:
-            raise ToolInvalidState(
-                "Tried to finish Nodes comparison without comparing all nodes"
-            )
+            # If not all comparisons are complete, ask the user if they're sure they
+            # want to finish.
+            if not show_node_incomplete_consolidation_warning():
+                # If they're not sure (clicked Cancel), let them continue comparing
+                return self
+
+            # If they're user, then set all unmarked comparisons to "don't consolidate"
+            for i in range(len(self.comparisons_outcomes)):
+                (comparison, outcome) = self.comparisons_outcomes[i]
+                if outcome is None:
+                    self.comparisons_outcomes[i] = (
+                        comparison,
+                        ComparisonOutcome(consolidate=False),
+                    )
 
         self.nodes_consolidator.finalise_with_user_comparison_outcomes(
             cast(
