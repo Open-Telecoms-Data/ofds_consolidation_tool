@@ -1,12 +1,28 @@
-from typing import List, Set, Tuple
+from abc import ABC, abstractmethod
+from typing import Dict, Generic, List, Set, Tuple, TypeVar
+
+import json
 
 from qgis.core import QgsVectorLayer, QgsProject
 
-from .network import Node, Network
-from .comparison import NodeComparison, ComparisonOutcome, ConsolidationReason
+from .network import Node, Network, Span
+from .comparison import (
+    NodeComparison,
+    ComparisonOutcome,
+    ConsolidationReason,
+    SpanComparison,
+)
 
 
-class NetworkNodesConsolidator:
+ComparisonT = TypeVar("ComparisonT", NodeComparison, SpanComparison)
+
+
+class AbstractNetworkConsolidator(Generic[ComparisonT], ABC):
+    @abstractmethod
+    def get_comparisons_to_ask_user(self) -> List[ComparisonT]: ...
+
+
+class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
     """
     Builder class to get the comparisons out of a pair of networks.
     """
@@ -21,6 +37,9 @@ class NetworkNodesConsolidator:
     user_comparisons: List[NodeComparison]
 
     nodes: List[Tuple[Node, ComparisonOutcome]]
+
+    # Lookup for Id's of nodes from Network B after consolidation
+    network_b_node_ids_map: Dict[str, str]
 
     def __init__(
         self,
@@ -37,6 +56,7 @@ class NetworkNodesConsolidator:
         self.match_radius_km = match_radius_km
         self.nodes = list()
         self.user_comparisons = []
+        self.network_b_node_ids_map = dict()
 
         self._compare_nodes()
 
@@ -70,6 +90,9 @@ class NetworkNodesConsolidator:
                     )
                     outcome = ComparisonOutcome(consolidate=reason)
                     self.nodes.append((reason.primary_node, outcome))
+                    self.network_b_node_ids_map[comparison.node_b.id] = (
+                        comparison.node_a.id
+                    )
 
                 elif comparison.confidence >= self.ask_threshold:
                     #   todo: get user pref for which network to keep
@@ -90,16 +113,59 @@ class NetworkNodesConsolidator:
         for comparison, outcome in user_comparison_outcomes:
             if isinstance(outcome.consolidate, ConsolidationReason):
                 self.nodes.append((outcome.consolidate.primary_node, outcome))
+                self.network_b_node_ids_map[comparison.node_b.id] = comparison.node_a.id
 
             else:
                 # no match: keep both
                 self.nodes.append((comparison.node_a, outcome))
                 self.nodes.append((comparison.node_b, outcome))
 
-    def get_consolidated_network(self):
-        # TODO:
-        # Create a new Qgs Layer out of the Consolidated nodes
-        _ = qgis_layer_from_nodes(set([n for (n, o) in self.nodes]))
+    def get_networks_with_consolidated_nodes(self) -> Tuple[Network, Network]:
+        qgs_layer = qgis_layer_from_nodes(set([n for (n, o) in self.nodes]))
+
+        def _remap_network_b_span_node_ids(span: Span) -> Span:
+            new_properties = span.properties.copy()
+            p_start = new_properties["start"]
+            p_end = new_properties["end"]
+
+            # Check in case properties have been loaded as nested JSON string
+            if isinstance(p_start, str):
+                p_start = json.loads(p_start)
+
+            if isinstance(p_end, str):
+                p_end = json.loads(p_end)
+
+            if p_start["id"] in self.network_b_node_ids_map:
+                p_start["id"] = self.network_b_node_ids_map[p_start["id"]]
+
+            if p_end["id"] in self.network_b_node_ids_map:
+                p_end["id"] = self.network_b_node_ids_map[p_end["id"]]
+
+            new_properties["start"] = p_start
+            new_properties["end"] = p_end
+
+            new_span = Span(span.id, properties=new_properties, feature=span.feature)
+            return new_span
+
+        # Network A IDs never change, so no remapping needed
+        new_network_a = Network(
+            nodes=[n for (n, _) in self.nodes],
+            nodesLayer=qgs_layer,
+            spans=self.network_a.spans,
+            spansLayer=self.network_a.spansLayer,
+        )
+
+        # Network B span start/end IDs may be remapped
+        new_network_b = Network(
+            nodes=[n for (n, _) in self.nodes],
+            nodesLayer=qgs_layer,
+            spans=list(
+                _remap_network_b_span_node_ids(span) for span in self.network_b.spans
+            ),
+            spansLayer=self.network_b.spansLayer,
+        )
+
+        return (new_network_a, new_network_b)
 
 
 def qgis_layer_from_nodes(nodes: Set[Node]) -> QgsVectorLayer:
@@ -128,19 +194,14 @@ def qgis_layer_from_nodes(nodes: Set[Node]) -> QgsVectorLayer:
     return layer
 
 
-# TODO
-class NetworkSpansConsolidator:
-    nodes: List[Node]
+class NetworkSpansConsolidator(AbstractNetworkConsolidator[SpanComparison]):
+    network_a: Network
+    network_b: Network
 
-    def __init__(self, nodes: List[Node]):
-        self.nodes = nodes
+    def __init__(self, network_a: Network, network_b: Network):
+        self.network_a = network_a
+        self.network_b = network_b
 
-    def update_spans(self):
+    def get_comparisons_to_ask_user(self) -> List[SpanComparison]:
         # TODO
-        # after node comparision has been done, look through the start/ends of
-        # spans and update any where duplicates were found and replaced
-        pass
-
-    def compare_spans(self):
-        # TODO
-        pass
+        raise NotImplementedError

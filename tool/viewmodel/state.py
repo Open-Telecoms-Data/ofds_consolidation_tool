@@ -1,11 +1,24 @@
-from typing import ClassVar, List, Union, Tuple, cast
+from abc import abstractmethod
+from typing import ClassVar, Generic, List, Union, Tuple, cast
 from enum import Enum
 
 
 from qgis.core import QgsVectorLayer
 
-from ..model.consolidation import NetworkNodesConsolidator
-from ..model.comparison import ConsolidationReason, NodeComparison, ComparisonOutcome
+from ..model.consolidation import (
+    ComparisonT,
+    NetworkNodesConsolidator,
+    NetworkSpansConsolidator,
+    AbstractNetworkConsolidator,
+)
+
+from ..model.comparison import (
+    ConsolidationReason,
+    NodeComparison,
+    ComparisonOutcome,
+    SpanComparison,
+)
+
 from ..model.network import Network, Node
 from ..view_warningbox import (
     show_node_incomplete_consolidation_warning,
@@ -43,14 +56,13 @@ class ToolLayerSelectState(AbstractToolState):
         return f"<ToolLayerSelectState n_layers={len(self.selectableLayers)}>"
 
 
-class ToolNodeComparisonState(AbstractToolState):
-    state = ToolStateEnum.COMPARING_NODES
+class AbstractToolComparisonState(Generic[ComparisonT], AbstractToolState):
     # Networks
     networks: Tuple[Network, Network]
 
     # Consolidator
-    nodes_consolidator: NetworkNodesConsolidator
-    comparisons_outcomes: List[Tuple[NodeComparison, Union[None, ComparisonOutcome]]]
+    consolidator: AbstractNetworkConsolidator[ComparisonT]
+    comparisons_outcomes: List[Tuple[ComparisonT, Union[None, ComparisonOutcome]]]
 
     # Keep track of which pair we're looking at now
     current: int
@@ -58,19 +70,19 @@ class ToolNodeComparisonState(AbstractToolState):
     def __init__(
         self,
         networks: Tuple[Network, Network],
-        nodes_consolidator: NetworkNodesConsolidator,
+        consolidator: AbstractNetworkConsolidator[ComparisonT],
     ):
         self.networks = networks
-        self.nodes_consolidator = nodes_consolidator
+        self.consolidator = consolidator
         self.comparisons_outcomes = [
             (comparison, None)
-            for comparison in self.nodes_consolidator.get_comparisons_to_ask_user()
+            for comparison in self.consolidator.get_comparisons_to_ask_user()
         ]
         self.current = 0
 
     def __str__(self):
         return (
-            f"<ToolNodeComparisonState total={self.nTotal}"
+            f"<ToolComparisonState state={self.state} total={self.nTotal}"
             + f"compared={self.nCompared} current={self.current}>"
         )
 
@@ -83,6 +95,43 @@ class ToolNodeComparisonState(AbstractToolState):
         self.current -= 1
         if self.current < 0:
             self.current = self.nTotal - 1
+
+    @abstractmethod
+    def finish(self) -> "ToolState": ...
+
+    @property
+    def nTotal(self) -> int:
+        return len(self.comparisons_outcomes)
+
+    @property
+    def nCompared(self) -> int:
+        return len(
+            [1 for (_, outcome) in self.comparisons_outcomes if outcome is not None]
+        )
+
+    @property
+    def all_compared(self) -> bool:
+        return all(outcome is not None for (_, outcome) in self.comparisons_outcomes)
+
+    @property
+    def currentComparison(self) -> Union[None, ComparisonT]:
+        try:
+            return self.comparisons_outcomes[self.current][0]
+        except IndexError:
+            return None
+
+    @property
+    def currentOutcome(self) -> Union[None, ComparisonOutcome]:
+        try:
+            return self.comparisons_outcomes[self.current][1]
+        except IndexError:
+            return None
+
+
+class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
+    state = ToolStateEnum.COMPARING_NODES
+
+    consolidator: NetworkNodesConsolidator
 
     def setOutcomeConsolidate(self) -> bool:
         """
@@ -160,35 +209,7 @@ class ToolNodeComparisonState(AbstractToolState):
             ComparisonOutcome(consolidate=False),
         )
 
-    @property
-    def nTotal(self) -> int:
-        return len(self.comparisons_outcomes)
-
-    @property
-    def nCompared(self) -> int:
-        return len(
-            [1 for (_, outcome) in self.comparisons_outcomes if outcome is not None]
-        )
-
-    @property
-    def all_compared(self) -> bool:
-        return all(outcome is not None for (_, outcome) in self.comparisons_outcomes)
-
-    @property
-    def currentComparison(self) -> Union[None, NodeComparison]:
-        try:
-            return self.comparisons_outcomes[self.current][0]
-        except IndexError:
-            return None
-
-    @property
-    def currentOutcome(self) -> Union[None, ComparisonOutcome]:
-        try:
-            return self.comparisons_outcomes[self.current][1]
-        except IndexError:
-            return None
-
-    def finish(self):
+    def finish(self) -> "ToolState":
         if not self.all_compared:
             # If not all comparisons are complete, ask the user if they're sure they
             # want to finish.
@@ -205,19 +226,31 @@ class ToolNodeComparisonState(AbstractToolState):
                         ComparisonOutcome(consolidate=False),
                     )
 
-        self.nodes_consolidator.finalise_with_user_comparison_outcomes(
+        self.consolidator.finalise_with_user_comparison_outcomes(
             cast(
                 List[Tuple[NodeComparison, ComparisonOutcome]],
                 self.comparisons_outcomes,
             )
         )
 
-        consolidated_network = self.nodes_consolidator.get_consolidated_network()
-        return ToolSpanComparisonState()
+        (new_network_a, new_network_b) = (
+            self.consolidator.get_networks_with_consolidated_nodes()
+        )
+        return ToolSpanComparisonState(
+            networks=(new_network_a, new_network_b),
+            consolidator=NetworkSpansConsolidator(
+                network_a=new_network_a, network_b=new_network_b
+            ),
+        )
 
 
-class ToolSpanComparisonState(AbstractToolState):
+class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
     state = ToolStateEnum.COMPARING_SPANS
+
+    consolidator: NetworkSpansConsolidator
+
+    def finish(self) -> "ToolOutputState":
+        raise NotImplementedError
 
 
 class ToolOutputState(AbstractToolState):

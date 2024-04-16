@@ -297,7 +297,7 @@ class LayerSelectView:
         self.startButton.setEnabled(enable_layer_select)
 
 
-class NodeComparisonView:
+class ComparisonView:
     """
     The view which renders the comparison part of the UI.
     """
@@ -432,7 +432,7 @@ class ToolView:
     """
 
     layerSelectView: LayerSelectView
-    nodeComparisonView: NodeComparisonView
+    nodeComparisonView: ComparisonView
     tabWidget: QTabWidget
 
     def __init__(self, project: QgsProject, ui: Ui_OFDSDedupToolDialog):
@@ -442,7 +442,7 @@ class ToolView:
             startButton=ui.startButton,
         )
 
-        self.nodeComparisonView = NodeComparisonView(
+        self.nodeComparisonView = ComparisonView(
             project=project,
             canvases=(ui.mapA, ui.mapB),
             infoPanel=ui.infoPanel,
@@ -455,6 +455,19 @@ class ToolView:
             finishButton=ui.finishedNodesButton,
         )
 
+        self.spanComparisonView = ComparisonView(
+            project=project,
+            canvases=(ui.spansMapA, ui.spansMapB),
+            infoPanel=ui.spansInfoPanel,
+            sameButton=ui.spansSameButton,
+            notSameButton=ui.spansNotSameButton,
+            nextButton=ui.spansNextButton,
+            prevButton=ui.spansPrevButton,
+            progressLabel=ui.spansComparisonLabel,
+            progressBar=ui.spansComparisonProgressBar,
+            finishButton=ui.spansFinishedButton,
+        )
+
         self.tabWidget = ui.tabWidget
 
     def update(self, state: ToolState):
@@ -463,6 +476,9 @@ class ToolView:
 
         elif isinstance(state, ToolNodeComparisonState):
             self.tabWidget.setCurrentIndex(1)
+
+        elif isinstance(state, ToolSpanComparisonState):
+            self.tabWidget.setCurrentIndex(2)
 
         else:
             raise NotImplementedError

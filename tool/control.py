@@ -57,12 +57,12 @@ class ToolController:
         """
         if isinstance(state, ToolLayerSelectState):
             # Gather layers to use
-            networkA = Network(
+            networkA = Network.from_qgs_vectorlayers(
                 nodesLayer=self.ui.nodesComboBoxA.currentData(),
                 spansLayer=self.ui.spansComboBoxA.currentData(),
             )
 
-            networkB = Network(
+            networkB = Network.from_qgs_vectorlayers(
                 nodesLayer=self.ui.nodesComboBoxB.currentData(),
                 spansLayer=self.ui.spansComboBoxB.currentData(),
             )
@@ -72,7 +72,7 @@ class ToolController:
 
             return ToolNodeComparisonState(
                 networks=(networkA, networkB),
-                nodes_consolidator=NetworkNodesConsolidator(
+                consolidator=NetworkNodesConsolidator(
                     networkA,
                     networkB,
                     merge_above=self.ui.autoThresholdSpinBox.value(),
