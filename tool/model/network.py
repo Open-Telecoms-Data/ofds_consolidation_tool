@@ -1,7 +1,7 @@
 import json
 
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
 
@@ -27,13 +27,33 @@ class Feature:
     id: str  # id is the OFDS id
     properties: Dict[str, Any]
 
-    def __init__(self, feature: QgsFeature):
-        self.feature = feature
-        self.featureId = feature.id()
-        self.properties = feature.attributeMap()
-        if "id" not in self.properties or not isinstance(self.properties["id"], str):
+    @classmethod
+    def from_qgis_feature(cls, feature: QgsFeature):
+        properties = feature.attributeMap()
+        if "id" not in properties or not isinstance(properties["id"], str):
             raise OFDSInvalidFeature
-        self.id = self.properties["id"]
+        ofds_id = properties["id"]
+        return cls(id=ofds_id, properties=properties, feature=feature)
+
+    def __init__(self, id: str, properties: Dict[str, Any], feature: QgsFeature):
+        self.id = id
+        self.properties = properties
+        self.feature = feature
+        self.featureId = self.feature.id()
+
+        if (
+            self.featureType == FeatureType.NODE
+            and not self.feature.geometry().type()
+            == QgsWkbTypes.GeometryType.PointGeometry
+        ):
+            raise OFDSInvalidFeature("Nodes layer must be PointGeometry")
+
+        if (
+            self.featureType == FeatureType.SPAN
+            and not self.feature.geometry().type()
+            == QgsWkbTypes.GeometryType.LineGeometry
+        ):
+            raise OFDSInvalidFeature("Spans layer must be LineGeometry")
 
     def __hash__(self) -> int:
         # Enable Nodes/Spans to be put in a Set or Dict
@@ -48,11 +68,6 @@ class Feature:
 
 class Node(Feature):
     featureType = FeatureType.NODE
-
-    def __init__(self, feature: QgsFeature):
-        super().__init__(feature)
-        if not self.feature.geometry().type() == QgsWkbTypes.GeometryType.PointGeometry:
-            raise OFDSInvalidFeature("Nodes layer must be PointGeometry")
 
     def get(self, k):
         """
@@ -149,7 +164,7 @@ class Node(Feature):
     @property
     def name(self) -> str:
         """Human readable name"""
-        return self.properties["name"] if "name" in self.properties else self.id
+        return cast(str, self.properties.get("name", self.id))
 
     def __str__(self):
         return f"<Node {self.name}>"
@@ -189,13 +204,30 @@ class Network:
     nodesSpacialIndex: QgsSpatialIndex
     spansSpacialIndex: QgsSpatialIndex
 
-    def __init__(self, nodesLayer: QgsVectorLayer, spansLayer: QgsVectorLayer):
+    @classmethod
+    def from_qgs_vectorlayers(
+        cls, nodesLayer: QgsVectorLayer, spansLayer: QgsVectorLayer
+    ):
+        # Load in all the nodes/spans from layer features
+        nodes = list(map(Node.from_qgis_feature, list(nodesLayer.getFeatures())))  # type: ignore
+        spans = list(map(Span.from_qgis_feature, list(spansLayer.getFeatures())))  # type: ignore
+
+        return cls(
+            nodes=nodes, nodesLayer=nodesLayer, spans=spans, spansLayer=spansLayer
+        )
+
+    def __init__(
+        self,
+        nodes: List[Node],
+        nodesLayer: QgsVectorLayer,
+        spans: List[Span],
+        spansLayer: QgsVectorLayer,
+    ):
         self.nodesLayer = nodesLayer
         self.spansLayer = spansLayer
 
-        # Load in all the nodes/spans from layer features
-        self.nodes = list(map(Node, list(self.nodesLayer.getFeatures())))  # type: ignore
-        self.spans = list(map(Span, list(self.nodesLayer.getFeatures())))  # type: ignore
+        self.nodes = nodes
+        self.spans = spans
 
         self.nodesByFeatureId = {n.featureId: n for n in self.nodes}
         self.spansByFeatureId = {s.featureId: s for s in self.spans}
