@@ -425,8 +425,8 @@ class ConsolidationReason:
     """
 
     feature_type: str
-    primary: Node
-    secondary: Node
+    primary: Union[Node, Span]
+    secondary: Union[Node, Span]
     confidence: float
     matching_properties: List[str]
     manual: bool = False
