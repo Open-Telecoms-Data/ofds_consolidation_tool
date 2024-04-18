@@ -189,7 +189,6 @@ class Span(Feature):
 
         if k == "end":
             # Return only id and coordinates
-            if k == "end":
             end = self.properties.get("end", {})
             try:
                 end_id = end.get("id")
