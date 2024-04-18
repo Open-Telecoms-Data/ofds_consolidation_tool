@@ -56,7 +56,7 @@ ALL_SPAN_PROPERTIES = [
 class Comparison:
     """
     Generalised comparision class for things that are common between Node and
-    Span comparisons.
+    Span comparisons.ro
     """
 
     total: float
@@ -64,33 +64,8 @@ class Comparison:
     scores: dict
     confidence: float
 
-    def __init__(self, weights=None):
-        self.weights = weights if weights else self.default_weights()
-
-    def default_weights(self) -> Dict[str, float]:
-        # We can pass different weights in for nodes and spans, but falls back to this.
-        weights = {
-            "name": 0.5,
-            "phase/name": 0.75,
-            "physicalInfrastructureProvider": 0.75,
-            "accessPoint": 0.6,
-            "power": 0.5,
-            "status": 0.2,
-            "coordinates": 1,
-            "location/address/streetAddress": 0.9,
-            "location/address/locality": 0.75,
-            "location/address/region": 0.1,
-            "location/address/postalCode": 0.8,
-            "location/address/country": 0.1,
-            "type": 0.75,
-            "internationalConnections/streetAddress": 0.1,
-            "internationalConnections/region": 0.1,
-            "internationalConnections/locality": 0.1,
-            "internationalConnections/postalCode": 0.1,
-            "internationalConnections/country": 0.2,
-            "networkProviders": 0.75,
-        }
-        return weights
+    def __init__(self, weights={}):
+        self.weights = weights
 
     def weight(self, prop):
         return self.weights.get(prop)
@@ -196,7 +171,7 @@ class NodeComparison(Comparison):
         self.features = (node_a, node_b)
         self.node_a = node_a
         self.node_b = node_b
-        self.weights = weights if weights else self.default_weights()
+        self.weights = weights if weights else self.default_node_weights()
 
         self.scores = {
             "name": self.compare_strings(node_a.get("name"), node_b.get("name")),
@@ -251,7 +226,7 @@ class NodeComparison(Comparison):
                 node_b.get("internationalConnections/locality"),
             ),
             "internationalConnections/postalCode": self.compare_array_strings(
-                node_a.get("internationalConnections/postalCode"),OH WAIT
+                node_a.get("internationalConnections/postalCode"),
                 node_b.get("internationalConnections/postalCode"),
             ),
             "internationalConnections/country": self.compare_array_codelist_equals(
@@ -260,10 +235,38 @@ class NodeComparison(Comparison):
             ),
         }
 
+
         logger.debug(self.scores)
 
         self.calculate_total()
         self.calculate_confidence()
+
+
+    def default_node_weights(self) -> Dict[str, float]:
+        # We can pass different weights on the fly if needed, but falls back to this.
+        weights = {
+            "name": 0.5,
+            "phase/name": 0.75,
+            "physicalInfrastructureProvider": 0.75,
+            "accessPoint": 0.6,
+            "power": 0.5,
+            "status": 0.2,
+            "coordinates": 1,
+            "location/address/streetAddress": 0.9,
+            "location/address/locality": 0.75,
+            "location/address/region": 0.1,
+            "location/address/postalCode": 0.8,
+            "location/address/country": 0.1,
+            "type": 0.75,
+            "internationalConnections/streetAddress": 0.1,
+            "internationalConnections/region": 0.1,
+            "internationalConnections/locality": 0.1,
+            "internationalConnections/postalCode": 0.1,
+            "internationalConnections/country": 0.2,
+            "networkProviders": 0.75,
+        }
+        return weights
+
 
     @classmethod
     def _point_distance_km(self, point_a: QgsPointXY, point_b: QgsPointXY) -> float:
@@ -314,16 +317,56 @@ class SpanComparison(Comparison):
         self.features = (span_a, span_b)
         self.span_a_id = span_a.id
         self.span_b_id = span_b.id
-        self.weights = weights if weights else self.default_weights()
+        self.weights = weights if weights else self.default_span_weights()
 
         self.scores = {
             "name": self.compare_strings(span_a.get("name"), span_b.get("name")),
-            "type": self.compare_types(span_a.get("type"), span_b.get("type")),
             "nodes": self.compare_start_and_end_nodes([span_a.get("start"), span_a.get("end")], [span_b.get("start"), span_b.get("end")]),
+            "phase/name": self.compare_strings(
+                span_a.get("phase/name"), span_b.get("phase/name")
+            ),
+            "status": self.compare_equals(span_a.get("status"), span_b.get("status")),
+            "countries": self.compare_array_codelist_equals(span_a.get("countries"), span_b.get("countries")),
+            "physicalInfrastructureProvider": self.compare_strings(
+                span_a.get("physicalInfrastructureProvider"),
+                span_b.get("physicalInfrastructureProvider"),
+            ),
+            "networkProviders": self.compare_networkProviders(
+                span_a.get("networkProviders"),
+                span_b.get("networkProviders"),
+            ),
+            # TODO: check what actual format readyForServiceDate should be and if we should do proper date comparision
+            # it's just a string in the standard
+            "readyForServiceDate": self.compare_equals(span_a.get("readyForServiceDate"), span_b.get("readyForServiceDate")),
+            "transmissionMedium": self.compare_array_codelist_equals(span_a.get("transmissionMedium"), span_b.get("transmissionMedium")),
+            "deployment": self.compare_array_codelist_equals(span_a.get("deployment"), span_b.get("deployment")),
+            "fibreType": self.compare_equals(span_a.get("fibreType"), span_b.get("fibreType")),
+
         }
 
         self.calculate_total()
         self.calculate_confidence()
+
+    def default_span_weights(self) -> Dict[str, float]:
+        weights = {
+            "name": 0.5,
+            "phase/name": 0.75,
+            "readyForServiceDate": 0.75,
+            "nodes": 1,
+            "physicalInfrastructureProvider": 0.75,
+            "coordinates": 1,
+            "supplier": 0.75,
+            "transmissionMedium": 0.75,
+            "deployment": 0.75,
+            "fibreType": 0.75,
+            "fibreCount": 0.75,
+            "fibreLength": 0.75,
+            "capacity": 0.75,
+            "countries": 0.1,
+            "status": 0.1,
+            "networkProviders": 0.5,
+        }
+        return weights
 
     def _normalise_start_and_end_node_ids(self, start, end):
         """
