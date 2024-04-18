@@ -342,6 +342,10 @@ class SpanComparison(Comparison):
             "deployment": self.compare_array_codelist_equals(span_a.get("deployment"), span_b.get("deployment")),
             "fibreType": self.compare_equals(span_a.get("fibreType"), span_b.get("fibreType")),
             "supplier": self.compare_strings(span_a.get("supplier"), span_b.get("supplier")),
+            "fibreLength": self.compare_fibreLength(span_a.get("fibreLength"), span_b.get("fibreLegnth")),
+            "fibreCount": self.compare_equals(span_a.get("fibreCount"), span_b.get("fibreCount")), # TODO: check if this should be equals or if there's a threshold to use
+            "fibreType": self.compare_equals(span_a.get("fibreType"), span_b.get("fibreType")),
+            "capacity": self.compare_equals(span_a.get("capacity"), span_b.get("capacity")), # TODO: check if this should be equals or if there's a threshold to use
         }
 
         self.calculate_total()
@@ -354,7 +358,7 @@ class SpanComparison(Comparison):
             "readyForServiceDate": 0.75,
             "nodes": 1,
             "physicalInfrastructureProvider": 0.75,
-            "coordinates": 1,
+            "coordinates": 0.75,
             "supplier": 0.75,
             "transmissionMedium": 0.75,
             "deployment": 0.75,
@@ -374,6 +378,16 @@ class SpanComparison(Comparison):
         for intersection.
         """
         return {start.get("id"), end.get("id")}
+
+    def compare_fibreLength(self, first, second):
+        """
+        Score 0 if longer than 1km difference, otherwise the closer the length the
+        higher the score. TODO: check the 1km threshold.
+        """
+        if first is None or second is None:
+            return 0
+        diff = abs(first - second)
+        return 1-diff if diff < 1 else 0
 
     def compare_line_proximity(self, first, second):
         # TODO
