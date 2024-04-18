@@ -178,12 +178,6 @@ class Comparison:
         return self.compare_array_strings(first, second)
 
 
-    def compare_internationalConnections(self, first, second):
-        # TODO
-        # Decide how to handle this array of objects, several fields are relevant
-        pass
-
-
 @dataclass
 class NodeComparison(Comparison):
     node_a: Node
@@ -257,7 +251,7 @@ class NodeComparison(Comparison):
                 node_b.get("internationalConnections/locality"),
             ),
             "internationalConnections/postalCode": self.compare_array_strings(
-                node_a.get("internationalConnections/postalCode"),
+                node_a.get("internationalConnections/postalCode"),OH WAIT
                 node_b.get("internationalConnections/postalCode"),
             ),
             "internationalConnections/country": self.compare_array_codelist_equals(
