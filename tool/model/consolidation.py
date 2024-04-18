@@ -203,5 +203,32 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[SpanComparison]):
         self.network_b = network_b
 
     def get_comparisons_to_ask_user(self) -> List[SpanComparison]:
-        # TODO
+        network_a_index: Dict[Tuple[str, str], Span]
+        network_a_index = dict()
+
+        # Build index of lookups from (start, end) to Span for Network A
+        for span_a in self.network_a.spans:
+            network_a_index[(span_a.start_id, span_a.end_id)] = span_a
+
+        matches: List[SpanComparison]
+        matches = list()
+
+        # Check Spans in Network B against Network A via the index
+        for span_b in self.network_b.spans:
+            # See if this span matches one in Network A
+            span_a_lookup = network_a_index.get((span_b.start_id, span_b.end_id))
+
+            # If not, check reverse end/start
+            if span_a_lookup is None:
+                span_a_lookup = network_a_index.get((span_b.end_id, span_b.start_id))
+
+            # Got a match!
+            if span_a_lookup is not None:
+                matches.append(SpanComparison(span_a_lookup, span_b))
+
+        return matches
+
+    def finalise_with_user_comparison_outcomes(
+        self, user_comparison_outcomes: List[Tuple[NodeComparison, ComparisonOutcome]]
+    ):
         raise NotImplementedError

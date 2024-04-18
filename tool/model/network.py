@@ -176,6 +176,20 @@ class Span(Feature):
     def get(self, k):
         return self.properties.get(k)
 
+    @property
+    def start_id(self):
+        start_obj = self.properties["start"]
+        if isinstance(start_obj, str):
+            start_obj = json.loads(start_obj)
+        return start_obj["id"]
+
+    @property
+    def end_id(self):
+        end_obj = self.properties["end"]
+        if isinstance(end_obj, str):
+            end_obj = json.loads(end_obj)
+        return end_obj["id"]
+
     def __str__(self):
         name = self.properties["name"] if "name" in self.properties else self.id
         return f"<Span {name}>"
