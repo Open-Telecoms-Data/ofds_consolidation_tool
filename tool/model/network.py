@@ -174,7 +174,13 @@ class Span(Feature):
     featureType = FeatureType.SPAN
 
     def get(self, k):
-        
+        """
+        Override get to access the properties.
+        Parses nested dicts again because QGIS sometimes can't handle them.
+        (Whether or not it does depends on underlying libraraies, so we have to
+        prepare for both eventualities.)
+        Also some shortcuts to properties we know we're comparing.
+        """
         if k == "start":
             # Return only id and coordinates
             start = self.properties.get("start", {})
@@ -200,6 +206,34 @@ class Span(Feature):
             return { "id": end_id, "coordinates": end_location }
 
         return self.properties.get(k)
+
+        if k == "phase/name":
+            phase = self.properties.get("phase", {})
+            try:
+                return phase.get("name")
+            except AttributeError:
+                phase_json = json.loads(phase)
+                return phase_json.get("name")
+        if k == "physicalInfrastructureProvider":
+            # Only compare name, id is irrelevant
+            pip = self.properties.get("physicalInfrastructureProvider", {})
+            try:
+                return pip.get("name")
+            except AttributeError:
+                pip_json = json.loads(pip)
+                return pip_json.get("name")
+        if k == "networkProviders":
+            # Return a list of the names in the array, as other properties are irrelevant
+            nps = self.properties.get("networkProviders")
+            names = []
+            try:
+                for np in nps:
+                    names.append(np.get("name"))
+            except AttributeError:
+                nps_json = json.loads(nps)
+                for np in nps_json:
+                    names.append(np.get("name"))
+            return names
 
     @property
     def start_id(self):
