@@ -174,6 +174,32 @@ class Span(Feature):
     featureType = FeatureType.SPAN
 
     def get(self, k):
+        
+        if k == "start":
+            # Return only id and coordinates
+            start = self.properties.get("start", {})
+            try:
+                start_id = start.get("id")
+                start_location = start.get("location", {}).get("coordinates")
+            except AttributeError:
+                start_json = json.loads(start)
+                start_id = start_json.get("id")
+                start_location = start_json.get("location", {}).get("coordinates")
+            return { "id": start_id, "coordinates": start_location }
+
+        if k == "end":
+            # Return only id and coordinates
+            if k == "end":
+            end = self.properties.get("end", {})
+            try:
+                end_id = end.get("id")
+                end_location = end.get("location", {}).get("coordinates")
+            except AttributeError:
+                end_json = json.loads(end)
+                end_id = end_json.get("id")
+                end_location = end_json.get("location", {}).get("coordinates")
+            return { "id": end_id, "coordinates": end_location }
+
         return self.properties.get(k)
 
     @property
