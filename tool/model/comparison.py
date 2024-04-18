@@ -32,6 +32,27 @@ ALL_NODE_PROPERTIES = [
 ]
 
 
+ALL_SPAN_PROPERTIES = [
+    "name",
+    "phase/name",
+    "readyForServiceDate",
+    "start",
+    "end",
+    "physicalInfrastructureProvider",
+    "coordinates",
+    "networkProviders",
+    "supplier",
+    "transmissionMedium",
+    "deployment",
+    "fibreType",
+    "fibreCount",
+    "fibreLength",
+    "capacity",
+    "countries"
+    "status",
+]
+
+
 class Comparison:
     """
     Generalised comparision class for things that are common between Node and
