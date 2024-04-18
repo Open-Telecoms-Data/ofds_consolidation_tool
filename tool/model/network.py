@@ -234,6 +234,14 @@ class Span(Feature):
                 for np in nps_json:
                     names.append(np.get("name"))
             return names
+        if k == "supplier":
+            # Only compare name, id is irrelevant
+            supplier = self.properties.get("supplier", {})
+            try:
+                return supplier.get("name")
+            except AttributeError:
+                supplier_json = json.loads(supplier)
+                return supplier_json.get("name")
 
     @property
     def start_id(self):
