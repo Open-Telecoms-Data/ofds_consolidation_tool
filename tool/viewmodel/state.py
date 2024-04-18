@@ -186,8 +186,8 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
         # Finally, update the outcome with a manual consolidation reason
         reason = ConsolidationReason(
             feature_type="NODE",
-            primary_node=comparison.node_a,
-            secondary_node=comparison.node_b,
+            primary=comparison.node_a,
+            secondary=comparison.node_b,
             confidence=comparison.confidence,
             # TODO: user's choice of matching properties? User text message?
             matching_properties=comparison.get_high_scoring_properties(),
