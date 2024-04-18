@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, List, Set, Tuple, TypeVar
+from typing import Dict, Generic, List, Set, Tuple
 
 import json
 
@@ -8,13 +8,11 @@ from qgis.core import QgsVectorLayer, QgsProject
 from .network import Node, Network, Span
 from .comparison import (
     NodeComparison,
-    ComparisonOutcome,
+    NodeComparisonOutcome,
     ConsolidationReason,
     SpanComparison,
+    ComparisonT,
 )
-
-
-ComparisonT = TypeVar("ComparisonT", NodeComparison, SpanComparison)
 
 
 class AbstractNetworkConsolidator(Generic[ComparisonT], ABC):
@@ -36,7 +34,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
 
     user_comparisons: List[NodeComparison]
 
-    nodes: List[Tuple[Node, ComparisonOutcome]]
+    nodes: List[Tuple[Node, NodeComparisonOutcome]]
 
     # Lookup for Id's of nodes from Network B after consolidation
     network_b_node_ids_map: Dict[str, str]
@@ -71,10 +69,21 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
                 if comparison.distance_km > self.match_radius_km:
                     # No chance of match, just add them both individually
                     self.nodes.append(
-                        (comparison.node_a, ComparisonOutcome(consolidate=False))
+                        (
+                            comparison.node_a,
+                            NodeComparisonOutcome(
+                                comparison=comparison,
+                                consolidate=False,
+                            ),
+                        )
                     )
                     self.nodes.append(
-                        (comparison.node_b, ComparisonOutcome(consolidate=False))
+                        (
+                            comparison.node_b,
+                            NodeComparisonOutcome(
+                                comparison=comparison, consolidate=False
+                            ),
+                        )
                     )
 
                 elif comparison.confidence >= self.merge_threshold:
@@ -88,7 +97,10 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
                         matching_properties=matching_properties,
                         manual=False,
                     )
-                    outcome = ComparisonOutcome(consolidate=reason)
+                    outcome = NodeComparisonOutcome(
+                        comparison=comparison, consolidate=reason
+                    )
+                    assert isinstance(reason.primary, Node)
                     self.nodes.append((reason.primary, outcome))
                     self.network_b_node_ids_map[comparison.node_b.id] = (
                         comparison.node_a.id
@@ -103,8 +115,9 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
         return self.user_comparisons
 
     def finalise_with_user_comparison_outcomes(
-        self, user_comparison_outcomes: List[Tuple[NodeComparison, ComparisonOutcome]]
-    ):
+        self,
+        user_comparison_outcomes: List[Tuple[NodeComparison, NodeComparisonOutcome]],
+    ) -> List[NodeComparisonOutcome]:
         """
         This method should be called after the user has been asked about all manual
         comparisons, and implements the results i.e. consolidating (or not) and adding
@@ -112,6 +125,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
         """
         for comparison, outcome in user_comparison_outcomes:
             if isinstance(outcome.consolidate, ConsolidationReason):
+                assert isinstance(outcome.consolidate.primary, Node)
                 self.nodes.append((outcome.consolidate.primary, outcome))
                 self.network_b_node_ids_map[comparison.node_b.id] = comparison.node_a.id
 
@@ -119,6 +133,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
                 # no match: keep both
                 self.nodes.append((comparison.node_a, outcome))
                 self.nodes.append((comparison.node_b, outcome))
+
+        return list(co for (n, co) in self.nodes)
 
     def get_networks_with_consolidated_nodes(self) -> Tuple[Network, Network]:
         qgs_layer = qgis_layer_from_nodes(set([n for (n, o) in self.nodes]))
@@ -229,6 +245,7 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[SpanComparison]):
         return matches
 
     def finalise_with_user_comparison_outcomes(
-        self, user_comparison_outcomes: List[Tuple[NodeComparison, ComparisonOutcome]]
+        self,
+        user_comparison_outcomes: List[Tuple[NodeComparison, NodeComparisonOutcome]],
     ):
         raise NotImplementedError

@@ -24,7 +24,6 @@ from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer
 from .model.network import FeatureType
-from .model.comparison import ComparisonOutcome
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -383,7 +382,7 @@ class ComparisonView:
 
         self.infoPanelView.update(state.currentComparison)
 
-        outcome: Optional[ComparisonOutcome] = state.currentOutcome
+        outcome = state.currentOutcome
         if outcome is None:
             self.sameButton.setEnabled(True)
             self.notSameButton.setEnabled(True)

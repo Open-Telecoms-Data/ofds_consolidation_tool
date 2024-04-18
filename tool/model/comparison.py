@@ -1,7 +1,8 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Dict, Generic, List, Literal, Optional, Tuple, TypeVar, Union
 from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea, QgsUnitTypes
+
 from .network import Node, Span
 
 from ..._lib.jellyfish import _jellyfish as jellyfish
@@ -48,8 +49,7 @@ ALL_SPAN_PROPERTIES = [
     "fibreCount",
     "fibreLength",
     "capacity",
-    "countries"
-    "status",
+    "countries" "status",
 ]
 
 
@@ -97,13 +97,13 @@ class Comparison:
         return jellyfish.jaro_winkler_similarity(first, second)
 
     def compare_array_codelist_equals(self, first, second):
-        """ Score arrays 1 if they are identical, 0 if not. """
+        """Score arrays 1 if they are identical, 0 if not."""
         list(first).sort()
         list(second).sort()
         return 1 if first == second and first != [] else 0
 
     def compare_array_codelist_matches(self, first, second):
-        """ Score arrays on a scale based on amount of overlap. """
+        """Score arrays on a scale based on amount of overlap."""
         first = set(first)
         second = set(second)
         intersection = first & second
@@ -141,7 +141,7 @@ class Comparison:
         return self.compare_array_codelist_matches(first, second)
 
     def compare_networkProviders(self, first, second):
-        """ Expects a list of names of network providers only. """
+        """Expects a list of names of network providers only."""
         if first == [] and second == []:
             return 0
         first = set(first)
@@ -235,12 +235,10 @@ class NodeComparison(Comparison):
             ),
         }
 
-
         logger.debug(self.scores)
 
         self.calculate_total()
         self.calculate_confidence()
-
 
     def default_node_weights(self) -> Dict[str, float]:
         # We can pass different weights on the fly if needed, but falls back to this.
@@ -266,7 +264,6 @@ class NodeComparison(Comparison):
             "networkProviders": 0.75,
         }
         return weights
-
 
     @classmethod
     def _point_distance_km(self, point_a: QgsPointXY, point_b: QgsPointXY) -> float:
@@ -297,11 +294,14 @@ class NodeComparison(Comparison):
         else:
             raise ValueError("Can't test equality with non-NodeComparison")
 
-
     def compare_proximity(self):
-        """ Score based on distance between nodes. """
-        min_to_score = 50 # We can fine tune if need be.
-        return 0 if self.distance_km > min_to_score else 1 - self.distance_km / min_to_score
+        """Score based on distance between nodes."""
+        min_to_score = 50  # We can fine tune if need be.
+        return (
+            0
+            if self.distance_km > min_to_score
+            else 1 - self.distance_km / min_to_score
+        )
 
 
 @dataclass
@@ -321,12 +321,17 @@ class SpanComparison(Comparison):
 
         self.scores = {
             "name": self.compare_strings(span_a.get("name"), span_b.get("name")),
-            "nodes": self.compare_start_and_end_nodes([span_a.get("start"), span_a.get("end")], [span_b.get("start"), span_b.get("end")]),
+            "nodes": self.compare_start_and_end_nodes(
+                [span_a.get("start"), span_a.get("end")],
+                [span_b.get("start"), span_b.get("end")],
+            ),
             "phase/name": self.compare_strings(
                 span_a.get("phase/name"), span_b.get("phase/name")
             ),
             "status": self.compare_equals(span_a.get("status"), span_b.get("status")),
-            "countries": self.compare_array_codelist_equals(span_a.get("countries"), span_b.get("countries")),
+            "countries": self.compare_array_codelist_equals(
+                span_a.get("countries"), span_b.get("countries")
+            ),
             "physicalInfrastructureProvider": self.compare_strings(
                 span_a.get("physicalInfrastructureProvider"),
                 span_b.get("physicalInfrastructureProvider"),
@@ -337,15 +342,33 @@ class SpanComparison(Comparison):
             ),
             # TODO: check what actual format readyForServiceDate should be and if we should do proper date comparision
             # it's just a string in the standard
-            "readyForServiceDate": self.compare_equals(span_a.get("readyForServiceDate"), span_b.get("readyForServiceDate")),
-            "transmissionMedium": self.compare_array_codelist_equals(span_a.get("transmissionMedium"), span_b.get("transmissionMedium")),
-            "deployment": self.compare_array_codelist_equals(span_a.get("deployment"), span_b.get("deployment")),
-            "fibreType": self.compare_equals(span_a.get("fibreType"), span_b.get("fibreType")),
-            "supplier": self.compare_strings(span_a.get("supplier"), span_b.get("supplier")),
-            "fibreLength": self.compare_fibreLength(span_a.get("fibreLength"), span_b.get("fibreLegnth")),
-            "fibreCount": self.compare_equals(span_a.get("fibreCount"), span_b.get("fibreCount")), # TODO: check if this should be equals or if there's a threshold to use
-            "fibreType": self.compare_equals(span_a.get("fibreType"), span_b.get("fibreType")),
-            "capacity": self.compare_equals(span_a.get("capacity"), span_b.get("capacity")), # TODO: check if this should be equals or if there's a threshold to use
+            "readyForServiceDate": self.compare_equals(
+                span_a.get("readyForServiceDate"), span_b.get("readyForServiceDate")
+            ),
+            "transmissionMedium": self.compare_array_codelist_equals(
+                span_a.get("transmissionMedium"), span_b.get("transmissionMedium")
+            ),
+            "deployment": self.compare_array_codelist_equals(
+                span_a.get("deployment"), span_b.get("deployment")
+            ),
+            "fibreType": self.compare_equals(
+                span_a.get("fibreType"), span_b.get("fibreType")
+            ),
+            "supplier": self.compare_strings(
+                span_a.get("supplier"), span_b.get("supplier")
+            ),
+            "fibreLength": self.compare_fibreLength(
+                span_a.get("fibreLength"), span_b.get("fibreLegnth")
+            ),
+            "fibreCount": self.compare_equals(
+                span_a.get("fibreCount"), span_b.get("fibreCount")
+            ),  # TODO: check if this should be equals or if there's a threshold to use
+            "fibreType": self.compare_equals(
+                span_a.get("fibreType"), span_b.get("fibreType")
+            ),
+            "capacity": self.compare_equals(
+                span_a.get("capacity"), span_b.get("capacity")
+            ),  # TODO: check if this should be equals or if there's a threshold to use
         }
 
         self.calculate_total()
@@ -387,7 +410,7 @@ class SpanComparison(Comparison):
         if first is None or second is None:
             return 0
         diff = abs(first - second)
-        return 1-diff if diff < 1 else 0
+        return 1 - diff if diff < 1 else 0
 
     def compare_line_proximity(self, first, second):
         # TODO
@@ -409,11 +432,16 @@ class SpanComparison(Comparison):
         nodes_a = self._normalise_start_and_end_node_ids(first[0], first[1])
         nodes_b = self._normalise_start_and_end_node_ids(second[0], second[1])
         overlap = len(nodes_a & nodes_b)
-        if overlap == 2: # they're the same
+        if overlap == 2:  # they're the same
             return 1
-        if overlap == 1: # one end is the same, which probably isn't meaningful, but more than nothing
+        if (
+            overlap == 1
+        ):  # one end is the same, which probably isn't meaningful, but more than nothing
             return 0.2
         return 0
+
+
+ComparisonT = TypeVar("ComparisonT", NodeComparison, SpanComparison)
 
 
 @dataclass(frozen=True)
@@ -433,10 +461,22 @@ class ConsolidationReason:
 
 
 @dataclass(frozen=True)
-class ComparisonOutcome:
+class ComparisonOutcome(Generic[ComparisonT]):
     """
-    Represents the outcome of the comparison of two features by the user.
+    Represents the outcome of the comparison of two Features by the user.
     """
+
+    comparison: ComparisonT
 
     # Consolidate is either False, or an instance of ConsolidationReason
     consolidate: Union[Literal[False], ConsolidationReason]
+
+
+@dataclass(frozen=True)
+class NodeComparisonOutcome(ComparisonOutcome[NodeComparison]):
+    pass
+
+
+@dataclass(frozen=True)
+class SpanComparisonOutcome(ComparisonOutcome[SpanComparison]):
+    pass

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import ClassVar, Generic, List, Union, Tuple, cast
+from typing import ClassVar, Dict, Generic, List, Union, Tuple, cast
 from enum import Enum
 
 
@@ -13,9 +13,10 @@ from ..model.consolidation import (
 )
 
 from ..model.comparison import (
+    ComparisonOutcome,
     ConsolidationReason,
     NodeComparison,
-    ComparisonOutcome,
+    NodeComparisonOutcome,
     SpanComparison,
 )
 
@@ -62,7 +63,9 @@ class AbstractToolComparisonState(Generic[ComparisonT], AbstractToolState):
 
     # Consolidator
     consolidator: AbstractNetworkConsolidator[ComparisonT]
-    comparisons_outcomes: List[Tuple[ComparisonT, Union[None, ComparisonOutcome]]]
+    comparisons_outcomes: List[
+        Tuple[ComparisonT, Union[None, ComparisonOutcome[ComparisonT]]]
+    ]
 
     # Keep track of which pair we're looking at now
     current: int
@@ -121,7 +124,7 @@ class AbstractToolComparisonState(Generic[ComparisonT], AbstractToolState):
             return None
 
     @property
-    def currentOutcome(self) -> Union[None, ComparisonOutcome]:
+    def currentOutcome(self) -> Union[None, ComparisonOutcome[ComparisonT]]:
         try:
             return self.comparisons_outcomes[self.current][1]
         except IndexError:
@@ -180,7 +183,7 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
         for other_i, _ in other_comparisons_with_node_a + other_comparisons_with_node_b:
             self.comparisons_outcomes[other_i] = (
                 other_comparison,
-                ComparisonOutcome(consolidate=False),
+                NodeComparisonOutcome(comparison=other_comparison, consolidate=False),
             )
 
         # Finally, update the outcome with a manual consolidation reason
@@ -196,7 +199,7 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
 
         self.comparisons_outcomes[self.current] = (
             comparison,
-            ComparisonOutcome(consolidate=reason),
+            NodeComparisonOutcome(comparison=comparison, consolidate=reason),
         )
 
         return True
@@ -206,7 +209,7 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
         assert comparison is not None
         self.comparisons_outcomes[self.current] = (
             comparison,
-            ComparisonOutcome(consolidate=False),
+            NodeComparisonOutcome(comparison=comparison, consolidate=False),
         )
 
     def finish(self) -> "ToolState":
@@ -223,12 +226,12 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
                 if outcome is None:
                     self.comparisons_outcomes[i] = (
                         comparison,
-                        ComparisonOutcome(consolidate=False),
+                        NodeComparisonOutcome(comparison=comparison, consolidate=False),
                     )
 
-        self.consolidator.finalise_with_user_comparison_outcomes(
+        final_outcomes = self.consolidator.finalise_with_user_comparison_outcomes(
             cast(
-                List[Tuple[NodeComparison, ComparisonOutcome]],
+                List[Tuple[NodeComparison, NodeComparisonOutcome]],
                 self.comparisons_outcomes,
             )
         )
@@ -236,11 +239,13 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
         (new_network_a, new_network_b) = (
             self.consolidator.get_networks_with_consolidated_nodes()
         )
+
         return ToolSpanComparisonState(
             networks=(new_network_a, new_network_b),
             consolidator=NetworkSpansConsolidator(
                 network_a=new_network_a, network_b=new_network_b
             ),
+            nodes_provenance=final_outcomes,
         )
 
 
@@ -248,6 +253,28 @@ class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
     state = ToolStateEnum.COMPARING_SPANS
 
     consolidator: NetworkSpansConsolidator
+
+    # Dict of Node ID to ComparisonOutcome
+    nodes_provenance: Dict[str, NodeComparisonOutcome]
+
+    def __init__(
+        self,
+        networks: Tuple[Network, Network],
+        consolidator: AbstractNetworkConsolidator[SpanComparison],
+        nodes_provenance: List[NodeComparisonOutcome],
+    ):
+        super().__init__(networks, consolidator)
+        self.nodes_provenance = dict()
+
+        # Build dict of nodes provenance
+        co: NodeComparisonOutcome
+        for co in nodes_provenance:
+            if co.consolidate is False:
+                self.nodes_provenance[co.comparison.node_a.id] = co
+                self.nodes_provenance[co.comparison.node_b.id] = co
+
+            elif isinstance(co.consolidate, ConsolidationReason):
+                self.nodes_provenance[co.consolidate.primary_feature.id] = co
 
     def setOutcomeConsolidate(self):
         raise NotImplementedError("TODO")
