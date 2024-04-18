@@ -289,8 +289,8 @@ class NodeComparison(Comparison):
 @dataclass
 class SpanComparison(Comparison):
     features: Tuple[Span, Span]
-    node_a_id: str
-    node_b_id: str
+    span_a_id: str
+    span_b_id: str
     total: float
     confidence: float
     scores: dict
@@ -301,10 +301,21 @@ class SpanComparison(Comparison):
         self.span_b_id = span_b.id
         self.weights = weights if weights else self.default_weights()
 
-        self.scores = {}  # TODO
+        self.scores = {
+            "name": self.compare_strings(span_a.get("name"), span_b.get("name")),
+            "type": self.compare_types(span_a.get("type"), span_b.get("type")),
+            "nodes": self.compare_start_and_end_nodes([span_a.get("start"), span_a.get("end")], [span_b.get("start"), span_b.get("end")]),
+        }
 
         self.calculate_total()
         self.calculate_confidence()
+
+    def _normalise_start_and_end_node_ids(self, start, end):
+        """
+        We're ignoring direction, so this puts the ids into a set so we can check
+        for intersection.
+        """
+        return {start.get("id"), end.get("id")}
 
     def compare_line_proximity(self, first, second):
         # TODO
@@ -317,13 +328,20 @@ class SpanComparison(Comparison):
         pass
 
     def compare_start_and_end_nodes(self, first, second):
-        # TODO
-        # Doesn't matter which is start and which is end
-        # Compare based on id, after node consolidation has happened
-        # Return 1 if both pairs are the same, 0.2(?) if one is the same, 0 if neither
-        # tbd: worth the effort of comparing proximity of start and end nodes if they're
-        # not an exact match?
-        pass
+        """
+        See if there are matches between the pair of nodes at the ends of the spans.
+        Input is two lists, containing the start and end data for each span being compared.
+        TODO: worth the effort of comparing proximity of start and end nodes if they're
+        not an exact match?
+        """
+        nodes_a = self._normalise_start_and_end_node_ids(first[0], first[1])
+        nodes_b = self._normalise_start_and_end_node_ids(second[0], second[1])
+        overlap = len(nodes_a & nodes_b)
+        if overlap == 2: # they're the same
+            return 1
+        if overlap == 1: # one end is the same, which probably isn't meaningful, but more than nothing
+            return 0.2
+        return 0
 
 
 @dataclass(frozen=True)
