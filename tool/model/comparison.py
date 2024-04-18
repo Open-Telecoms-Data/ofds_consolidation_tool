@@ -341,7 +341,7 @@ class SpanComparison(Comparison):
             "transmissionMedium": self.compare_array_codelist_equals(span_a.get("transmissionMedium"), span_b.get("transmissionMedium")),
             "deployment": self.compare_array_codelist_equals(span_a.get("deployment"), span_b.get("deployment")),
             "fibreType": self.compare_equals(span_a.get("fibreType"), span_b.get("fibreType")),
-
+            "supplier": self.compare_strings(span_a.get("supplier"), span_b.get("supplier")),
         }
 
         self.calculate_total()
