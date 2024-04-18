@@ -45,11 +45,18 @@ class OFDSDedupToolDialog(QDialog):
 
         # Connect UI signals to slots on this class
         self.ui.startButton.clicked.connect(self.onStartButtonClicked)
+
         self.ui.sameNodesButton.clicked.connect(self.onSameNodeButtonClicked)
         self.ui.notSameNodesButton.clicked.connect(self.onNotSameNodeButtonClicked)
         self.ui.nextNodesButton.clicked.connect(self.onNextNodesButtonClicked)
         self.ui.prevNodesButton.clicked.connect(self.onPrevNodesButtonClicked)
         self.ui.finishedNodesButton.clicked.connect(self.onFinishedNodesButtonClicked)
+
+        self.ui.spansSameButton.clicked.connect(self.onSameSpanButtonClicked)
+        self.ui.spansNotSameButton.clicked.connect(self.onNotSameSpanButtonClicked)
+        self.ui.spansNextButton.clicked.connect(self.onNextSpansButtonClicked)
+        self.ui.spansPrevButton.clicked.connect(self.onPrevSpansButtonClicked)
+        self.ui.spansFinishedButton.clicked.connect(self.onFinishedSpansButtonClicked)
 
     def reset(self, project: QgsProject):
         """
@@ -73,6 +80,7 @@ class OFDSDedupToolDialog(QDialog):
         logger.debug("Start button clicked")
         self.set_state(self.controller.onStartButton(self.state))
 
+    # Nodes Comparison
     def onSameNodeButtonClicked(self):
         logger.debug("Same node button clicked")
         self.set_state(self.controller.onSameButton(self.state))
@@ -88,6 +96,22 @@ class OFDSDedupToolDialog(QDialog):
         self.set_state(self.controller.onPrevButton(self.state))
 
     def onFinishedNodesButtonClicked(self):
+        self.set_state(self.controller.onFinishedButton(self.state))
+
+    # Spans Comparison
+    def onSameSpanButtonClicked(self):
+        self.set_state(self.controller.onSameButton(self.state))
+
+    def onNotSameSpanButtonClicked(self):
+        self.set_state(self.controller.onNotSameButton(self.state))
+
+    def onNextSpansButtonClicked(self):
+        self.set_state(self.controller.onNextButton(self.state))
+
+    def onPrevSpansButtonClicked(self):
+        self.set_state(self.controller.onPrevButton(self.state))
+
+    def onFinishedSpansButtonClicked(self):
         self.set_state(self.controller.onFinishedButton(self.state))
 
 
