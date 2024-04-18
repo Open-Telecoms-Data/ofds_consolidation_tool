@@ -411,8 +411,8 @@ class ConsolidationReason:
     """
 
     feature_type: str
-    primary_node: Node
-    secondary_node: Node
+    primary: Node
+    secondary: Node
     confidence: float
     matching_properties: List[str]
     manual: bool = False

@@ -82,14 +82,14 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
                     matching_properties = comparison.get_high_scoring_properties()
                     reason = ConsolidationReason(
                         feature_type="NODE",
-                        primary_node=comparison.node_a,
-                        secondary_node=comparison.node_b,
+                        primary=comparison.node_a,
+                        secondary=comparison.node_b,
                         confidence=comparison.confidence,
                         matching_properties=matching_properties,
                         manual=False,
                     )
                     outcome = ComparisonOutcome(consolidate=reason)
-                    self.nodes.append((reason.primary_node, outcome))
+                    self.nodes.append((reason.primary, outcome))
                     self.network_b_node_ids_map[comparison.node_b.id] = (
                         comparison.node_a.id
                     )
@@ -112,7 +112,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
         """
         for comparison, outcome in user_comparison_outcomes:
             if isinstance(outcome.consolidate, ConsolidationReason):
-                self.nodes.append((outcome.consolidate.primary_node, outcome))
+                self.nodes.append((outcome.consolidate.primary, outcome))
                 self.network_b_node_ids_map[comparison.node_b.id] = comparison.node_a.id
 
             else:
