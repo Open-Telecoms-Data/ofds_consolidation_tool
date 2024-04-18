@@ -84,7 +84,9 @@ class ToolController:
             raise ControllerInvalidState
 
     def onNextButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState):
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
             state.gotoNextComparison()
             return state
 
@@ -92,7 +94,9 @@ class ToolController:
             raise ControllerInvalidState
 
     def onPrevButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState):
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
             state.gotoPrevComparison()
             return state
 
@@ -100,7 +104,9 @@ class ToolController:
             raise ControllerInvalidState
 
     def onSameButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState):
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
             if state.setOutcomeConsolidate():
                 state.gotoNextComparison()
             return state
@@ -109,7 +115,9 @@ class ToolController:
             raise ControllerInvalidState
 
     def onNotSameButton(self, state: ToolState) -> ToolState:
-        if isinstance(state, ToolNodeComparisonState):
+        if isinstance(state, ToolNodeComparisonState) or isinstance(
+            state, ToolSpanComparisonState
+        ):
             state.setOutcomeDontConsolidate()
             state.gotoNextComparison()
             return state
@@ -121,9 +129,8 @@ class ToolController:
         if isinstance(state, ToolNodeComparisonState):
             return state.finish()
 
-            # return ToolSpanComparisonState(newNetworks, ...)  # TODO
         elif isinstance(state, ToolSpanComparisonState):
-            raise NotImplementedError  # TODO
+            raise NotImplementedError("TODO")  # TODO
 
         else:
             raise ControllerInvalidState

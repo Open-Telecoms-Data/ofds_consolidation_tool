@@ -23,7 +23,7 @@ from .model.comparison import (
 from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer
-from .model.network import Span, FeatureType
+from .model.network import FeatureType
 from .model.comparison import ComparisonOutcome
 from .viewmodel.state import (
     ToolLayerSelectState,

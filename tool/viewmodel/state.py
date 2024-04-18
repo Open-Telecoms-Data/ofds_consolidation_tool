@@ -249,8 +249,14 @@ class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
 
     consolidator: NetworkSpansConsolidator
 
+    def setOutcomeConsolidate(self):
+        raise NotImplementedError("TODO")
+
+    def setOutcomeDontConsolidate(self):
+        raise NotImplementedError("TODO")
+
     def finish(self) -> "ToolOutputState":
-        raise NotImplementedError
+        raise NotImplementedError("TODO")
 
 
 class ToolOutputState(AbstractToolState):
