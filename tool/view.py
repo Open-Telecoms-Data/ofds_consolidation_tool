@@ -28,6 +28,7 @@ from .model.comparison import ComparisonOutcome
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
+    ToolOutputState,
     ToolSpanComparisonState,
     ToolState,
     ToolStateEnum,
@@ -127,7 +128,7 @@ class MiniMapView:
             or state.spansLayer != self.layers.spansLayer
         ):
             # We shouldn't get surprise layer changes
-            raise InvalidViewState
+            raise InvalidViewState("Unexpected Layer change")
 
         # Zoom the map to and hilight the relevent feature
         if state.featureType == FeatureType.NODE:
@@ -213,6 +214,26 @@ class InfoPanelView:
 
         return info_html
 
+    def render_span_comparison_info(self, comparison: SpanComparison) -> str:
+        span_a = comparison.features[0]
+        span_b = comparison.features[1]
+
+        info_html = f"""
+        TODO
+
+        Span A:
+        <pre>
+        {json.dumps(span_a.properties, indent=2)}
+        </pre>
+
+        Span B:
+        <pre>
+        {json.dumps(span_b.properties, indent=2)}
+        </pre>
+        """
+
+        return info_html
+
     def update(self, comparison: Union[NodeComparison, SpanComparison, None]):
         """
         Display the given Comparison, or nothing.
@@ -227,13 +248,10 @@ class InfoPanelView:
 
         self.infoPanel.setEnabled(True)
         if isinstance(comparison, NodeComparison):
-
             self.infoPanel.setHtml(self.render_node_comparison_info_html(comparison))
 
-        elif isinstance(comparison, Span):
-            # Display Span info
-            # TODO: make prettier. Maybe use non-plaintext
-            self.infoPanel.setHtml(json.dumps(comparison.properties, indent=2))
+        elif isinstance(comparison, SpanComparison):
+            self.infoPanel.setHtml(self.render_span_comparison_info(comparison))
 
         else:
             raise InvalidViewState
@@ -276,7 +294,7 @@ class LayerSelectView:
             for layer in layers:
                 scb.addItem(layer.name(), layer)
 
-    def update(self, state: ToolState):
+    def update(self, state: Optional[ToolState]):
         """
         Enable/Disable all the layer selection drop-down boxes and start button.
         We don't want the user to change layers in the middle of the process!
@@ -343,7 +361,9 @@ class ComparisonView:
         self.progressBar = progressBar
         self.finishButton = finishButton
 
-    def _updateComparing(self, state: ToolNodeComparisonState):
+    def _updateComparing(
+        self, state: Union[ToolNodeComparisonState, ToolSpanComparisonState]
+    ):
         """
         Update UI when we are currently comparing a pair of features.
         """
@@ -380,7 +400,7 @@ class ComparisonView:
         self.progressLabel.setText(
             f"Node Comparison {state.current+1} of {state.nTotal}"
             if state.state == ToolStateEnum.COMPARING_NODES
-            else "Span"
+            else f"Span Comparison {state.current+1} of {state.nTotal}"
         )
         self.progressBar.setEnabled(True)
         self.progressBar.setMinimum(0)
@@ -412,11 +432,11 @@ class ComparisonView:
 
         self.finishButton.setEnabled(False)
 
-    def update(self, state: ToolState):
+    def update(self, state: Optional[ToolState]):
         if isinstance(state, ToolNodeComparisonState):
             self._updateComparing(state)
         elif isinstance(state, ToolSpanComparisonState):
-            raise NotImplementedError
+            self._updateComparing(state)
         else:
             self._updateNotComparing()
 
@@ -470,18 +490,24 @@ class ToolView:
 
         self.tabWidget = ui.tabWidget
 
-    def update(self, state: ToolState):
+    def update(self, state: Optional[ToolState]):
         if isinstance(state, ToolLayerSelectState):
             self.tabWidget.setCurrentIndex(0)
-
-        elif isinstance(state, ToolNodeComparisonState):
-            self.tabWidget.setCurrentIndex(1)
-
-        elif isinstance(state, ToolSpanComparisonState):
-            self.tabWidget.setCurrentIndex(2)
-
+            self.layerSelectView.update(state)
         else:
-            raise NotImplementedError
+            self.layerSelectView.update(None)
 
-        self.layerSelectView.update(state)
-        self.nodeComparisonView.update(state)
+        if isinstance(state, ToolNodeComparisonState):
+            self.tabWidget.setCurrentIndex(1)
+            self.nodeComparisonView.update(state)
+        else:
+            self.nodeComparisonView.update(None)
+
+        if isinstance(state, ToolSpanComparisonState):
+            self.tabWidget.setCurrentIndex(2)
+            self.spanComparisonView.update(state)
+        else:
+            self.spanComparisonView.update(None)
+
+        if isinstance(state, ToolOutputState):
+            raise NotImplementedError
