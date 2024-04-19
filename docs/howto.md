@@ -1,3 +1,8 @@
+---
+title: How to guide
+layout: home
+---
+
 # How to use the OFDS consolidation tool
 
 ## Install QGIS and the plugin
