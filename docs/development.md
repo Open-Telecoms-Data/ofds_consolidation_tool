@@ -1,3 +1,8 @@
+---
+title: Development
+layout: home
+---
+
 # Development
 
 If you want to make changes to the consolidation tool code, follow these instructions to connect a local copy of the plugin with your QGIS installation.
