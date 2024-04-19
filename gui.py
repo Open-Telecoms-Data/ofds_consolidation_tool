@@ -94,12 +94,12 @@ class Ui_OFDSDedupToolDialog(object):
         self.askThresholdSpinBox.setProperty("value", 0)
         self.askThresholdSpinBox.setObjectName("askThresholdSpinBox")
         self.settingsFormLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.askThresholdSpinBox)
-        self.spinBox = QtWidgets.QSpinBox(self.layoutWidget1)
-        self.spinBox.setMinimum(1)
-        self.spinBox.setMaximum(200)
-        self.spinBox.setProperty("value", 10)
-        self.spinBox.setObjectName("spinBox")
-        self.settingsFormLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.spinBox)
+        self.nodesMatchRadiusSpinBox = QtWidgets.QSpinBox(self.layoutWidget1)
+        self.nodesMatchRadiusSpinBox.setMinimum(1)
+        self.nodesMatchRadiusSpinBox.setMaximum(200)
+        self.nodesMatchRadiusSpinBox.setProperty("value", 10)
+        self.nodesMatchRadiusSpinBox.setObjectName("nodesMatchRadiusSpinBox")
+        self.settingsFormLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.nodesMatchRadiusSpinBox)
         self.label = QtWidgets.QLabel(self.layoutWidget1)
         self.label.setObjectName("label")
         self.settingsFormLayout.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label)
@@ -250,7 +250,7 @@ class Ui_OFDSDedupToolDialog(object):
         self.verticalLayout.addWidget(self.tabWidget)
 
         self.retranslateUi(OFDSDedupToolDialog)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(OFDSDedupToolDialog)
 
     def retranslateUi(self, OFDSDedupToolDialog):
