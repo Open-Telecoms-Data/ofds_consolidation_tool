@@ -49,7 +49,8 @@ ALL_SPAN_PROPERTIES = [
     "fibreCount",
     "fibreLength",
     "capacity",
-    "countries" "status",
+    "countries",
+    "status",
 ]
 
 
