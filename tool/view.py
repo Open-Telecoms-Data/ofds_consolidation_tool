@@ -11,7 +11,13 @@ from PyQt5.QtWidgets import (
     QProgressBar,
     QTabWidget,
 )
-from qgis.core import QgsMapLayer, QgsVectorLayer, QgsProject, QgsCoordinateTransform
+from qgis.core import (
+    QgsMapLayer,
+    QgsVectorLayer,
+    QgsProject,
+    QgsCoordinateTransform,
+    QgsWkbTypes,
+)
 from qgis.gui import QgsMapCanvas
 
 from .model.comparison import (
@@ -286,12 +292,14 @@ class LayerSelectView:
         for ncb in self.nodesComboBoxes:
             ncb.clear()
             for layer in layers:
-                ncb.addItem(layer.name(), layer)
+                if layer.geometryType() == QgsWkbTypes.GeometryType.PointGeometry:
+                    ncb.addItem(layer.name(), layer)
 
         for scb in self.spansComboBoxes:
             scb.clear()
             for layer in layers:
-                scb.addItem(layer.name(), layer)
+                if layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry:
+                    scb.addItem(layer.name(), layer)
 
     def update(self, state: Optional[ToolState]):
         """
