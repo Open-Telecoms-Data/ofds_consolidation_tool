@@ -22,7 +22,7 @@ The plugin is currently in development beta, and not yet available from the QGIS
 
 You should start with node and span data for the two networks you want to compare.
 
-The network data need to be in [geoJSON]() format compatible with the [Open Fibre Data Standard]().
+The network data need to be in [geoJSON]() format compatible with the [Open Fibre Data Standard](https://open-fibre-data-standard.readthedocs.io).
 
 To convert OFDS JSON data into geoJSON, [use this conversion tool](). To convert data from other formats into OFDS, or to validate your data against the Open Fibre Data Standard, please [see these other things]().
 
