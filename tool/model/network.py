@@ -6,6 +6,19 @@ from typing import Any, Dict, List, cast
 from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
 
 
+NESTED_PROPERTIES = [
+    "end",
+    "internationalConnections",
+    "location",
+    "network",
+    "networkProviders",
+    "phase",
+    "physicalInfrastructureProvider",
+    "start",
+    "supplier"
+]
+
+
 class OFDSInvalidFeature(Exception):
     pass
 
@@ -29,7 +42,16 @@ class Feature:
 
     @classmethod
     def from_qgis_feature(cls, feature: QgsFeature):
-        properties = feature.attributeMap()
+        attributes = feature.attributeMap()
+        
+        # Check if nested objects have been loaded by QGIS, and load them if not.
+        properties = {}
+        for attribute in attributes.keys():
+            if attribute in NESTED_PROPERTIES and isinstance(attributes.get(attribute), str):
+                properties[attribute] = json.loads(attributes.get(attribute))
+            else:
+                properties[attribute] = attributes.get(attribute)
+
         if "id" not in properties or not isinstance(properties["id"], str):
             raise OFDSInvalidFeature
         ofds_id = properties["id"]
@@ -72,18 +94,11 @@ class Node(Feature):
     def get(self, k):
         """
         Override get to access the properties.
-        Parses nested dicts again because QGIS sometimes can't handle them.
-        (Whether or not it does depends on underlying libraraies, so we have to
-        prepare for both eventualities.)
         Also some shortcuts to properties we know we're comparing.
         """
         if k.startswith("location/address"):
             location = self.properties.get("location", {})
-            try:
-                address = location.get("address", {})
-            except AttributeError:
-                location_json = json.loads(l)
-                address = location_json.get("address")
+            address = location.get("address", {})
             if address:
                 if k == "location/address/country":
                     return address.get("country")
@@ -97,35 +112,27 @@ class Node(Feature):
                     return address.get("locality")
             else:
                 return None
+
         if k == "coordinates":
             return self.feature.geometry().asPoint().toString()
+
         if k == "phase/name":
             phase = self.properties.get("phase", {})
-            try:
-                return phase.get("name")
-            except AttributeError:
-                phase_json = json.loads(phase)
-                return phase_json.get("name")
+            return phase.get("name")
+
         if k == "physicalInfrastructureProvider":
             # Only compare name, id is irrelevant
             pip = self.properties.get("physicalInfrastructureProvider", {})
-            try:
-                return pip.get("name")
-            except AttributeError:
-                pip_json = json.loads(pip)
-                return pip_json.get("name")
+            return pip.get("name")
+
         if k == "networkProviders":
             # Return a list of the names in the array, as other properties are irrelevant
             nps = self.properties.get("networkProviders")
             names = []
-            try:
-                for np in nps:
-                    names.append(np.get("name"))
-            except AttributeError:
-                nps_json = json.loads(nps)
-                for np in nps_json:
-                    names.append(np.get("name"))
+            for np in nps:
+                names.append(np.get("name"))
             return names
+
         if k.startswith("internationalConnections/"):
             ics = self.properties.get("internationalConnections", [])
             addresses = []
@@ -133,21 +140,13 @@ class Node(Feature):
             countries = []
             localities = []
             postcodes = []
-            try:
-                for ic in ics:
-                    addresses.append(ic.get("streetAddress"))
-                    regions.append(ic.get("region"))
-                    countries.append(ic.get("country"))
-                    localities.append(ic.get("locality"))
-                    postcodes.append(ic.get("postalCode"))
-            except AttributeError:
-                ics_json = json.loads(ics)
-                for ic in ics_json:
-                    addresses.append(ic.get("streetAddress"))
-                    regions.append(ic.get("region"))
-                    countries.append(ic.get("country"))
-                    localities.append(ic.get("locality"))
-                    postcodes.append(ic.get("postalCode"))
+            for ic in ics:
+                addresses.append(ic.get("streetAddress"))
+                regions.append(ic.get("region"))
+                countries.append(ic.get("country"))
+                localities.append(ic.get("locality"))
+                postcodes.append(ic.get("postalCode"))
+
             if k == "internationalConnections/streetAddress":
                 return addresses
             if k == "internationalConnections/region":
@@ -176,72 +175,45 @@ class Span(Feature):
     def get(self, k):
         """
         Override get to access the properties.
-        Parses nested dicts again because QGIS sometimes can't handle them.
-        (Whether or not it does depends on underlying libraraies, so we have to
-        prepare for both eventualities.)
         Also some shortcuts to properties we know we're comparing.
         """
         if k == "start":
             # Return only id and coordinates
             start = self.properties.get("start", {})
-            try:
-                start_id = start.get("id")
-                start_location = start.get("location", {}).get("coordinates")
-            except AttributeError:
-                start_json = json.loads(start)
-                start_id = start_json.get("id")
-                start_location = start_json.get("location", {}).get("coordinates")
+            start_id = start.get("id")
+            start_location = start.get("location", {}).get("coordinates")
             return { "id": start_id, "coordinates": start_location }
 
         if k == "end":
             # Return only id and coordinates
             end = self.properties.get("end", {})
-            try:
-                end_id = end.get("id")
-                end_location = end.get("location", {}).get("coordinates")
-            except AttributeError:
-                end_json = json.loads(end)
-                end_id = end_json.get("id")
-                end_location = end_json.get("location", {}).get("coordinates")
+            end_id = end.get("id")
+            end_location = end.get("location", {}).get("coordinates")
             return { "id": end_id, "coordinates": end_location }
-
-        return self.properties.get(k)
 
         if k == "phase/name":
             phase = self.properties.get("phase", {})
-            try:
-                return phase.get("name")
-            except AttributeError:
-                phase_json = json.loads(phase)
-                return phase_json.get("name")
+            return phase.get("name")
+
         if k == "physicalInfrastructureProvider":
             # Only compare name, id is irrelevant
             pip = self.properties.get("physicalInfrastructureProvider", {})
-            try:
-                return pip.get("name")
-            except AttributeError:
-                pip_json = json.loads(pip)
-                return pip_json.get("name")
+            return pip.get("name")
+
         if k == "networkProviders":
             # Return a list of the names in the array, as other properties are irrelevant
             nps = self.properties.get("networkProviders")
             names = []
-            try:
-                for np in nps:
-                    names.append(np.get("name"))
-            except AttributeError:
-                nps_json = json.loads(nps)
-                for np in nps_json:
-                    names.append(np.get("name"))
+            for np in nps:
+                names.append(np.get("name"))
             return names
+
         if k == "supplier":
             # Only compare name, id is irrelevant
             supplier = self.properties.get("supplier", {})
-            try:
-                return supplier.get("name")
-            except AttributeError:
-                supplier_json = json.loads(supplier)
-                return supplier_json.get("name")
+            return supplier.get("name")
+
+        return self.properties.get(k)
 
     @property
     def start_id(self):
