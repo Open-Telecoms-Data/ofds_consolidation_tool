@@ -4,7 +4,7 @@ This is a [QGIS](https://qgis.org/) plugin to consolidate (deduplicate, combine)
 
 ## Using the tool - quickstart guide
 
-For more detail on any of these steps, see the [how to guide]().
+For more detail on any of these steps, see the [how to guide](howto).
 
 1. Add your nodes and spans geoJSON files as Vector Layers in QGIS (optionally add map tiles; make sure the map is at the bottom of the layers).
 2. Start and configure the consolidation tool. Click through each presented pair of nodes and spans, and mark them as "Same" or "Not Same". Click "Finish" when you've compared them all.
