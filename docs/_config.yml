@@ -1,5 +1,4 @@
 title: OFDS Consolidation tool
 description: A QGIS plugin for consolidating Open Fibre data
 theme: just-the-docs
-baseurl: "/docs"
 url: https://open-telecoms-data.github.io/ofds_consolidation_tool
