@@ -1,7 +1,9 @@
 ---
 title: How to guide
-layout: home
+nav_order: 2
 ---
+
+{:toc}
 
 # How to use the OFDS consolidation tool
 
