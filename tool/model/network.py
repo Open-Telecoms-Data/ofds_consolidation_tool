@@ -127,7 +127,7 @@ class Node(Feature):
 
         if k == "networkProviders":
             # Return a list of the names in the array, as other properties are irrelevant
-            nps = self.properties.get("networkProviders")
+            nps = self.properties.get("networkProviders", [])
             names = []
             for np in nps:
                 names.append(np.get("name"))
@@ -202,7 +202,7 @@ class Span(Feature):
 
         if k == "networkProviders":
             # Return a list of the names in the array, as other properties are irrelevant
-            nps = self.properties.get("networkProviders")
+            nps = self.properties.get("networkProviders", [])
             names = []
             for np in nps:
                 names.append(np.get("name"))
