@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Generic, List, Set, Tuple
 
 import json
+import logging
 
 from qgis.core import QgsVectorLayer, QgsProject
 
@@ -13,6 +14,8 @@ from .comparison import (
     SpanComparison,
     ComparisonT,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractNetworkConsolidator(Generic[ComparisonT], ABC):
@@ -38,6 +41,26 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
 
     # Lookup for Id's of nodes from Network B after consolidation
     network_b_node_ids_map: Dict[str, str]
+
+    # When consolidating nodes, these properties should be copied from secondary to
+    # primary if they don't exist on the primary.
+    PROPS_TO_COPY = [
+        "name",
+        "location",
+        "address",
+        "type",
+        "accessPoint",
+        "power",
+        "physicalInfrastructureProvider",
+    ]
+
+    # When consolidating nodes, these properties are arrays that should be concatenated.
+    PROPS_TO_MERGE_ARRAYS = [
+        "type",
+        "internationalConnections",
+        "technologies",
+        "networkProviders",
+    ]
 
     def __init__(
         self,
@@ -126,8 +149,16 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
         for comparison, outcome in user_comparison_outcomes:
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Node)
-                self.nodes.append((outcome.consolidate.primary, outcome))
-                self.network_b_node_ids_map[comparison.node_b.id] = comparison.node_a.id
+                assert isinstance(outcome.consolidate.secondary, Node)
+                self.nodes.append(
+                    (
+                        self._merge_nodes(
+                            outcome.consolidate.primary,
+                            outcome.consolidate.secondary,
+                        ),
+                        outcome,
+                    )
+                )
 
             else:
                 # no match: keep both
@@ -136,32 +167,60 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
 
         return list(co for (n, co) in self.nodes)
 
+    def _merge_nodes(self, primary: Node, secondary: Node) -> Node:
+        # Update node map
+        self.network_b_node_ids_map[secondary.id] = primary.id
+
+        # Merge properties
+        props = primary.properties.copy()
+        props_b = secondary.properties
+
+        # Copy over properties that exist in B but not A
+        for k in self.PROPS_TO_COPY:
+            if k not in props and k in props_b:
+                props[k] = props_b[k]
+
+        # Merge array properties
+        for k in self.PROPS_TO_MERGE_ARRAYS:
+            prop_a = props.get(k, [])
+            prop_b = props_b.get(k, [])
+
+            # Check for JSON strings and convert
+            if isinstance(prop_a, str):
+                prop_a = json.loads(prop_a)
+            if isinstance(prop_b, str):
+                prop_b = json.loads(prop_b)
+
+            props[k] = list(prop_a) + list(prop_b)
+
+        return Node(primary.id, props, primary.feature)
+
+    def _remap_network_b_span_node_ids(self, span: Span) -> Span:
+        new_properties = span.properties.copy()
+        p_start = new_properties["start"]
+        p_end = new_properties["end"]
+
+        # Check in case properties have been loaded as nested JSON string
+        if isinstance(p_start, str):
+            p_start = json.loads(p_start)
+
+        if isinstance(p_end, str):
+            p_end = json.loads(p_end)
+
+        if p_start["id"] in self.network_b_node_ids_map:
+            p_start["id"] = self.network_b_node_ids_map[p_start["id"]]
+
+        if p_end["id"] in self.network_b_node_ids_map:
+            p_end["id"] = self.network_b_node_ids_map[p_end["id"]]
+
+        new_properties["start"] = p_start
+        new_properties["end"] = p_end
+
+        new_span = Span(span.id, properties=new_properties, feature=span.feature)
+        return new_span
+
     def get_networks_with_consolidated_nodes(self) -> Tuple[Network, Network]:
         qgs_layer = qgis_layer_from_nodes(set([n for (n, o) in self.nodes]))
-
-        def _remap_network_b_span_node_ids(span: Span) -> Span:
-            new_properties = span.properties.copy()
-            p_start = new_properties["start"]
-            p_end = new_properties["end"]
-
-            # Check in case properties have been loaded as nested JSON string
-            if isinstance(p_start, str):
-                p_start = json.loads(p_start)
-
-            if isinstance(p_end, str):
-                p_end = json.loads(p_end)
-
-            if p_start["id"] in self.network_b_node_ids_map:
-                p_start["id"] = self.network_b_node_ids_map[p_start["id"]]
-
-            if p_end["id"] in self.network_b_node_ids_map:
-                p_end["id"] = self.network_b_node_ids_map[p_end["id"]]
-
-            new_properties["start"] = p_start
-            new_properties["end"] = p_end
-
-            new_span = Span(span.id, properties=new_properties, feature=span.feature)
-            return new_span
 
         # Network A IDs never change, so no remapping needed
         new_network_a = Network(
@@ -176,7 +235,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[NodeComparison]):
             nodes=[n for (n, _) in self.nodes],
             nodesLayer=qgs_layer,
             spans=list(
-                _remap_network_b_span_node_ids(span) for span in self.network_b.spans
+                self._remap_network_b_span_node_ids(span)
+                for span in self.network_b.spans
             ),
             spansLayer=self.network_b.spansLayer,
         )

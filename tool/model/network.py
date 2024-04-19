@@ -37,7 +37,7 @@ class Feature:
 
     def __init__(self, id: str, properties: Dict[str, Any], feature: QgsFeature):
         self.id = id
-        self.properties = properties
+        self.properties = self._convert_properties(properties)
         self.feature = feature
         self.featureId = self.feature.id()
 
@@ -55,6 +55,10 @@ class Feature:
         ):
             raise OFDSInvalidFeature("Spans layer must be LineGeometry")
 
+    def _convert_properties(self, properties):
+        """Convert properties to their proper types. Node/Span specific."""
+        return properties
+
     def __hash__(self) -> int:
         # Enable Nodes/Spans to be put in a Set or Dict
         return hash((self.id, self.featureId, self.featureType))
@@ -68,6 +72,9 @@ class Feature:
 
 class Node(Feature):
     featureType = FeatureType.NODE
+
+    def _convert_properties(self, properties):
+        return super()._convert_properties(properties)
 
     def get(self, k):
         """

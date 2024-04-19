@@ -1,9 +1,12 @@
+import logging
 from abc import abstractmethod
 from typing import ClassVar, Dict, Generic, List, Union, Tuple, cast
 from enum import Enum
 
 
 from qgis.core import QgsVectorLayer
+
+from ..model.settings import Settings
 
 from ..model.consolidation import (
     ComparisonT,
@@ -24,7 +27,10 @@ from ..model.network import Network, Node
 from ..view_warningbox import (
     show_node_incomplete_consolidation_warning,
     show_node_multi_consolidation_warning,
+    show_warningbox,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ToolInvalidState(Exception):
@@ -58,6 +64,9 @@ class ToolLayerSelectState(AbstractToolState):
 
 
 class AbstractToolComparisonState(Generic[ComparisonT], AbstractToolState):
+    # Global Settings
+    settings: Settings
+
     # Networks
     networks: Tuple[Network, Network]
 
@@ -74,7 +83,9 @@ class AbstractToolComparisonState(Generic[ComparisonT], AbstractToolState):
         self,
         networks: Tuple[Network, Network],
         consolidator: AbstractNetworkConsolidator[ComparisonT],
+        settings: Settings,
     ):
+        self.settings = settings
         self.networks = networks
         self.consolidator = consolidator
         self.comparisons_outcomes = [
@@ -135,6 +146,23 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
     state = ToolStateEnum.COMPARING_NODES
 
     consolidator: NetworkNodesConsolidator
+
+    def __init__(
+        self,
+        networks: Tuple[Network, Network],
+        settings: Settings,
+    ):
+
+        consolidator = NetworkNodesConsolidator(
+            networks[0],
+            networks[1],
+            merge_above=settings.nodes_merge_threshold,
+            ask_above=settings.nodes_ask_threshold,
+            match_radius_km=settings.nodes_match_radius_km,
+        )
+        super().__init__(
+            networks=networks, consolidator=consolidator, settings=settings
+        )
 
     def setOutcomeConsolidate(self) -> bool:
         """
@@ -240,13 +268,22 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
             self.consolidator.get_networks_with_consolidated_nodes()
         )
 
-        return ToolSpanComparisonState(
+        span_comparison_state = ToolSpanComparisonState(
             networks=(new_network_a, new_network_b),
-            consolidator=NetworkSpansConsolidator(
-                network_a=new_network_a, network_b=new_network_b
-            ),
             nodes_provenance=final_outcomes,
+            settings=self.settings,
         )
+
+        if span_comparison_state.nTotal < 1:
+            logger.warn("There are no Span Comparisons to be made!")
+            show_warningbox(
+                "No Spans to Compare",
+                "No Spans are elegible for comparison!",
+            )
+            return span_comparison_state.finish()
+
+        else:
+            return span_comparison_state
 
 
 class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
@@ -260,10 +297,17 @@ class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
     def __init__(
         self,
         networks: Tuple[Network, Network],
-        consolidator: AbstractNetworkConsolidator[SpanComparison],
+        settings: Settings,
         nodes_provenance: List[NodeComparisonOutcome],
     ):
-        super().__init__(networks, consolidator)
+        consolidator = NetworkSpansConsolidator(
+            network_a=networks[0], network_b=networks[1]
+        )
+
+        super().__init__(
+            networks=networks, consolidator=consolidator, settings=settings
+        )
+
         self.nodes_provenance = dict()
 
         # Build dict of nodes provenance
@@ -274,7 +318,7 @@ class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
                 self.nodes_provenance[co.comparison.node_b.id] = co
 
             elif isinstance(co.consolidate, ConsolidationReason):
-                self.nodes_provenance[co.consolidate.primary_feature.id] = co
+                self.nodes_provenance[co.consolidate.primary.id] = co
 
     def setOutcomeConsolidate(self):
         raise NotImplementedError("TODO")

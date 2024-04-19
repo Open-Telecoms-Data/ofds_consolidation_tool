@@ -235,8 +235,6 @@ class NodeComparison(Comparison):
             ),
         }
 
-        logger.debug(self.scores)
-
         self.calculate_total()
         self.calculate_confidence()
 

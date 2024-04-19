@@ -3,7 +3,7 @@ from typing import List, cast
 import logging
 from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 
-from .model.consolidation import NetworkNodesConsolidator
+from .model.settings import Settings
 
 from ..gui import Ui_OFDSDedupToolDialog
 from .model.network import Network
@@ -70,14 +70,15 @@ class ToolController:
             # TODO: Find the nodes to compare
             # TODO: Do this in a background thread, with an intermediary state?
 
+            settings = Settings(
+                nodes_merge_threshold=self.ui.autoThresholdSpinBox.value(),
+                nodes_ask_threshold=self.ui.askThresholdSpinBox.value(),
+                nodes_match_radius_km=float(self.ui.nodesMatchRadiusSpinBox.value()),
+            )
+
             return ToolNodeComparisonState(
+                settings=settings,
                 networks=(networkA, networkB),
-                consolidator=NetworkNodesConsolidator(
-                    networkA,
-                    networkB,
-                    merge_above=self.ui.autoThresholdSpinBox.value(),
-                    ask_above=self.ui.askThresholdSpinBox.value(),
-                ),
             )
 
         else:

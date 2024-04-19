@@ -20,7 +20,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <property name="usesScrollButtons">
       <bool>false</bool>
@@ -183,7 +183,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QSpinBox" name="spinBox">
+         <widget class="QSpinBox" name="nodesMatchRadiusSpinBox">
           <property name="minimum">
            <number>1</number>
           </property>

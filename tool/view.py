@@ -89,7 +89,7 @@ class MiniMapView:
 
     def zoomToEverything(self):
         if not self.layers:
-            raise InvalidViewState
+            raise InvalidViewState("Can't display map without layers set")
 
         transform = QgsCoordinateTransform(
             self.layers.nodesLayer.crs(), self.DISPLAY_CRS, QgsProject.instance()
