@@ -3,6 +3,3 @@ description: A QGIS plugin for consolidating Open Fibre data
 theme: just-the-docs
 
 url: https://open-telecoms-data.github.io/ofds_consolidation_tool
-
-aux_links:
-  Template Repository: https://github.com/just-the-docs/just-the-docs-template
