@@ -4,6 +4,7 @@ title: Introduction
 nav_order: 1
 ---
 
+1. Table of contents
 {:toc}
 
 # OFDS Consolidation Tool

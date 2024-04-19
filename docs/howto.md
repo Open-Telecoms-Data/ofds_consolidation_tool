@@ -4,6 +4,7 @@ title: How to guide
 nav_order: 2
 ---
 
+1. Table of contents
 {:toc}
 
 # How to use the OFDS consolidation tool

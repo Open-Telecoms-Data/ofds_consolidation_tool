@@ -4,6 +4,7 @@ title: Development
 nav_order: 3
 ---
 
+1. Table of contents
 {:toc}
 
 # Development
