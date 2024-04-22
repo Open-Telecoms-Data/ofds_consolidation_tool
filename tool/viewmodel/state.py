@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import ClassVar, Dict, Generic, List, Union, Tuple, cast
+from typing import ClassVar, Dict, Generic, List, Type, TypeVar, Union, Tuple, cast
 from enum import Enum
 
 
@@ -21,12 +21,13 @@ from ..model.comparison import (
     NodeComparison,
     NodeComparisonOutcome,
     SpanComparison,
+    SpanComparisonOutcome,
 )
 
-from ..model.network import Network, Node
+from ..model.network import Network, Node, Span
 from ..view_warningbox import (
     show_node_incomplete_consolidation_warning,
-    show_node_multi_consolidation_warning,
+    show_multi_consolidation_warning,
     show_warningbox,
 )
 
@@ -63,7 +64,12 @@ class ToolLayerSelectState(AbstractToolState):
         return f"<ToolLayerSelectState n_layers={len(self.selectableLayers)}>"
 
 
-class AbstractToolComparisonState(Generic[ComparisonT], AbstractToolState):
+FeatT = TypeVar("FeatT", Node, Span)
+
+
+class AbstractToolComparisonState(Generic[FeatT, ComparisonT], AbstractToolState):
+    ComparisonOutcomeCls: Type[ComparisonOutcome[ComparisonT]]
+
     # Global Settings
     settings: Settings
 
@@ -141,9 +147,93 @@ class AbstractToolComparisonState(Generic[ComparisonT], AbstractToolState):
         except IndexError:
             return None
 
+    def setOutcomeConsolidate(self) -> bool:
+        """
+        Set the outcome of the current comparison as The Same aka Consolidate.
+        Returns False if the user cancelled, True if was successful.
+        """
+        comparison = self.currentComparison
+        assert comparison is not None
 
-class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
+        # Find all other comparisons containing one of the now-consolidated features,
+        # and set them to "Not Same", because we can only consolidate a node once.
+        other_comparisons_with_span_a: List[Tuple[int, FeatT]] = list()
+        other_comparisons_with_span_b: List[Tuple[int, FeatT]] = list()
+
+        for other_i in range(len(self.comparisons_outcomes)):
+            (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
+
+            if comparison == other_comparison:
+                continue
+
+            if comparison.feature_a.id == other_comparison.feature_a.id:
+                other_comparisons_with_span_a.append(
+                    (other_i, other_comparison.feature_b)
+                )
+
+            elif comparison.feature_b.id == other_comparison.feature_b.id:
+                other_comparisons_with_span_b.append(
+                    (other_i, other_comparison.feature_a)
+                )
+
+        # Check that none of the other comparisons w/ overlapping nodes have already
+        # been chosen to consolidate, if so display a warning to the user
+
+        for other_i, other_span in other_comparisons_with_span_a:
+            (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
+            if other_outcome is not None and other_outcome.consolidate is not False:
+                if not show_multi_consolidation_warning(
+                    "A", comparison.feature_a, other_span
+                ):
+                    return False
+
+        for other_i, other_span in other_comparisons_with_span_b:
+            (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
+            if other_outcome is not None and other_outcome.consolidate is not False:
+                if not show_multi_consolidation_warning(
+                    "B", comparison.feature_b, other_span
+                ):
+                    return False
+
+        # If we've got this far, update all the other comparisons to be "not same"
+        for other_i, _ in other_comparisons_with_span_a + other_comparisons_with_span_b:
+            self.comparisons_outcomes[other_i] = (
+                other_comparison,
+                self.ComparisonOutcomeCls(
+                    comparison=other_comparison, consolidate=False
+                ),
+            )
+
+        # Finally, update the outcome with a manual consolidation reason
+        reason = ConsolidationReason(
+            feature_type="NODE",
+            primary=comparison.feature_a,
+            secondary=comparison.feature_b,
+            confidence=comparison.confidence,
+            # TODO: user's choice of matching properties? User text message?
+            matching_properties=comparison.get_high_scoring_properties(),
+            manual=True,
+        )
+
+        self.comparisons_outcomes[self.current] = (
+            comparison,
+            self.ComparisonOutcomeCls(comparison=comparison, consolidate=reason),
+        )
+
+        return True
+
+    def setOutcomeDontConsolidate(self):
+        comparison = self.currentComparison
+        assert comparison is not None
+        self.comparisons_outcomes[self.current] = (
+            comparison,
+            self.ComparisonOutcomeCls(comparison=comparison, consolidate=False),
+        )
+
+
+class ToolNodeComparisonState(AbstractToolComparisonState[Node, NodeComparison]):
     state = ToolStateEnum.COMPARING_NODES
+    ComparisonOutcomeCls = NodeComparisonOutcome
 
     consolidator: NetworkNodesConsolidator
 
@@ -162,82 +252,6 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
         )
         super().__init__(
             networks=networks, consolidator=consolidator, settings=settings
-        )
-
-    def setOutcomeConsolidate(self) -> bool:
-        """
-        Set the outcome of the current comparison as The Same aka Consolidate.
-        Returns False if the user cancelled, True if was successful.
-        """
-        comparison = self.currentComparison
-        assert comparison is not None
-
-        # Find all other comparisons containing one of the now-consolidated nodes,
-        # and set them to "Not Same", because we can only consolidate a node once.
-        other_comparisons_with_node_a: List[Tuple[int, Node]] = list()
-        other_comparisons_with_node_b: List[Tuple[int, Node]] = list()
-        for other_i in range(len(self.comparisons_outcomes)):
-            (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
-
-            if comparison == other_comparison:
-                continue
-
-            if comparison.node_a.id == other_comparison.node_a.id:
-                other_comparisons_with_node_a.append((other_i, other_comparison.node_b))
-
-            elif comparison.node_b.id == other_comparison.node_b.id:
-                other_comparisons_with_node_b.append((other_i, other_comparison.node_a))
-
-        # Check that none of the other comparisons w/ overlapping nodes have already
-        # been chosen to consolidate, if so display a warning to the user
-
-        for other_i, other_node in other_comparisons_with_node_a:
-            (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
-            if other_outcome is not None and other_outcome.consolidate is not False:
-                if not show_node_multi_consolidation_warning(
-                    "A", comparison.node_a, other_node
-                ):
-                    return False
-
-        for other_i, other_node in other_comparisons_with_node_b:
-            (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
-            if other_outcome is not None and other_outcome.consolidate is not False:
-                if not show_node_multi_consolidation_warning(
-                    "B", comparison.node_b, other_node
-                ):
-                    return False
-
-        # If we've got this far, update all the other comparisons to be "not same"
-        for other_i, _ in other_comparisons_with_node_a + other_comparisons_with_node_b:
-            self.comparisons_outcomes[other_i] = (
-                other_comparison,
-                NodeComparisonOutcome(comparison=other_comparison, consolidate=False),
-            )
-
-        # Finally, update the outcome with a manual consolidation reason
-        reason = ConsolidationReason(
-            feature_type="NODE",
-            primary=comparison.node_a,
-            secondary=comparison.node_b,
-            confidence=comparison.confidence,
-            # TODO: user's choice of matching properties? User text message?
-            matching_properties=comparison.get_high_scoring_properties(),
-            manual=True,
-        )
-
-        self.comparisons_outcomes[self.current] = (
-            comparison,
-            NodeComparisonOutcome(comparison=comparison, consolidate=reason),
-        )
-
-        return True
-
-    def setOutcomeDontConsolidate(self):
-        comparison = self.currentComparison
-        assert comparison is not None
-        self.comparisons_outcomes[self.current] = (
-            comparison,
-            NodeComparisonOutcome(comparison=comparison, consolidate=False),
         )
 
     def finish(self) -> "ToolState":
@@ -286,8 +300,9 @@ class ToolNodeComparisonState(AbstractToolComparisonState[NodeComparison]):
             return span_comparison_state
 
 
-class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
+class ToolSpanComparisonState(AbstractToolComparisonState[Span, SpanComparison]):
     state = ToolStateEnum.COMPARING_SPANS
+    ComparisonOutcomeCls = SpanComparisonOutcome
 
     consolidator: NetworkSpansConsolidator
 
@@ -319,12 +334,6 @@ class ToolSpanComparisonState(AbstractToolComparisonState[SpanComparison]):
 
             elif isinstance(co.consolidate, ConsolidationReason):
                 self.nodes_provenance[co.consolidate.primary.id] = co
-
-    def setOutcomeConsolidate(self):
-        raise NotImplementedError("TODO")
-
-    def setOutcomeDontConsolidate(self):
-        raise NotImplementedError("TODO")
 
     def finish(self) -> "ToolOutputState":
         raise NotImplementedError("TODO")

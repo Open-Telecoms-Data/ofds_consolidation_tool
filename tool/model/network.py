@@ -15,7 +15,7 @@ NESTED_PROPERTIES = [
     "phase",
     "physicalInfrastructureProvider",
     "start",
-    "supplier"
+    "supplier",
 ]
 
 
@@ -43,11 +43,13 @@ class Feature:
     @classmethod
     def from_qgis_feature(cls, feature: QgsFeature):
         attributes = feature.attributeMap()
-        
+
         # Check if nested objects have been loaded by QGIS, and load them if not.
         properties = {}
         for attribute in attributes.keys():
-            if attribute in NESTED_PROPERTIES and isinstance(attributes.get(attribute), str):
+            if attribute in NESTED_PROPERTIES and isinstance(
+                attributes.get(attribute), str
+            ):
                 properties[attribute] = json.loads(attributes.get(attribute))
             else:
                 properties[attribute] = attributes.get(attribute)
@@ -76,6 +78,11 @@ class Feature:
             == QgsWkbTypes.GeometryType.LineGeometry
         ):
             raise OFDSInvalidFeature("Spans layer must be LineGeometry")
+
+    @property
+    def name(self) -> str:
+        """Human readable name"""
+        return cast(str, self.properties.get("name", self.id))
 
     def _convert_properties(self, properties):
         """Convert properties to their proper types. Node/Span specific."""
@@ -167,11 +174,6 @@ class Node(Feature):
 
         return self.properties.get(k)
 
-    @property
-    def name(self) -> str:
-        """Human readable name"""
-        return cast(str, self.properties.get("name", self.id))
-
     def __str__(self):
         return f"<Node {self.name}>"
 
@@ -189,14 +191,14 @@ class Span(Feature):
             start = self.properties.get("start", {})
             start_id = start.get("id")
             start_location = start.get("location", {}).get("coordinates")
-            return { "id": start_id, "coordinates": start_location }
+            return {"id": start_id, "coordinates": start_location}
 
         if k == "end":
             # Return only id and coordinates
             end = self.properties.get("end", {})
             end_id = end.get("id")
             end_location = end.get("location", {}).get("coordinates")
-            return { "id": end_id, "coordinates": end_location }
+            return {"id": end_id, "coordinates": end_location}
 
         if k == "phase/name":
             phase = self.properties.get("phase", {})

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Generic, List, Literal, Optional, Tuple, TypeVar, Union
 from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea, QgsUnitTypes
 
-from .network import Node, Span
+from .network import Feature, Node, Span
 
 from ..._lib.jellyfish import _jellyfish as jellyfish
 
@@ -60,10 +60,19 @@ class Comparison:
     Span comparisons.ro
     """
 
+    features: Tuple[Feature, Feature]
     total: float
     weights: dict
     scores: dict
     confidence: float
+
+    @property
+    def feature_a(self):
+        return self.features[0]
+
+    @property
+    def feature_b(self):
+        return self.features[1]
 
     def __init__(self, weights={}):
         self.weights = weights
@@ -156,12 +165,19 @@ class Comparison:
 
 @dataclass
 class NodeComparison(Comparison):
-    node_a: Node
-    node_b: Node
+    features: Tuple[Node, Node]
     total: float
     confidence: float
     scores: Dict[str, float]
     weight: Dict[str, float]
+
+    @property
+    def node_a(self):
+        return self.features[0]
+
+    @property
+    def node_b(self):
+        return self.features[1]
 
     def __init__(
         self,
@@ -170,8 +186,6 @@ class NodeComparison(Comparison):
         weights: Optional[Dict[str, float]] = None,
     ):
         self.features = (node_a, node_b)
-        self.node_a = node_a
-        self.node_b = node_b
         self.weights = weights if weights else self.default_node_weights()
 
         self.scores = {
@@ -289,7 +303,7 @@ class NodeComparison(Comparison):
 
     def __eq__(self, value: object) -> bool:
         if isinstance(value, NodeComparison):
-            return self.node_a == value.node_a and self.node_b == value.node_b
+            return (self.node_a == value.node_a) and (self.node_b == value.node_b)
         else:
             raise ValueError("Can't test equality with non-NodeComparison")
 
@@ -311,6 +325,14 @@ class SpanComparison(Comparison):
     total: float
     confidence: float
     scores: dict
+
+    @property
+    def span_a(self):
+        return self.features[0]
+
+    @property
+    def span_b(self):
+        return self.features[1]
 
     def __init__(self, span_a, span_b, weights=None):
         self.features = (span_a, span_b)

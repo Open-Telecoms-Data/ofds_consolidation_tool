@@ -1,27 +1,34 @@
-from typing import Literal
+from typing import Literal, Union
 
 from PyQt5.QtWidgets import QMessageBox
-from .model.network import Node
+from .model.network import Node, Span
 
 
-def show_node_multi_consolidation_warning(
-    a_or_b: Literal["A", "B"], node: Node, other_node: Node
+def show_multi_consolidation_warning(
+    a_or_b: Literal["A", "B"],
+    feature: Union[Node, Span],
+    other_feature: Union[Node, Span],
 ) -> bool:
     """
-    This is a popup warning box shown to users when they try to consolidate a node that
-    has already been consolidated in a different comparison.
+    This is a popup warning box shown to users when they try to consolidate a node/span
+    that has already been consolidated in a different comparison.
 
     Returns True/False, True if the user clicks OK, False if Cancel.
 
     This totally breaks the MVVM / MVC pattern we're using, but it works.
     """
-    title = f"Node {a_or_b} {node.name} already consolidated"
+    if isinstance(feature, Node):
+        kind = "Node"
+    else:
+        kind = "Span"
+
+    title = f"{kind} {a_or_b} {feature.name} already consolidated"
     info_text = (
-        f"The node in Network {a_or_b}:\n\n"
-        + f"{node.name} (id = {node.id})\n\n"
-        + "has already been marked as the same as another node:\n\n"
-        + f"{other_node.name} (id = {other_node.id})).\n\n"
-        + " If you mark  this node as the same instead, this will"
+        f"The {kind.lower()} in Network {a_or_b}:\n\n"
+        + f"{feature.name} (id = {feature.id})\n\n"
+        + f"has already been marked as the same as another {kind.lower()}:\n\n"
+        + f"{other_feature.name} (id = {other_feature.id})).\n\n"
+        + f" If you mark this {kind.lower()} as the same instead, this will"
         + " override your previous match.\n"
         + "Are you sure?"
     )

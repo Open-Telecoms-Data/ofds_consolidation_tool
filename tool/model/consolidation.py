@@ -13,6 +13,7 @@ from .comparison import (
     ConsolidationReason,
     SpanComparison,
     ComparisonT,
+    SpanComparisonOutcome,
 )
 
 logger = logging.getLogger(__name__)
@@ -306,6 +307,6 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[SpanComparison]):
 
     def finalise_with_user_comparison_outcomes(
         self,
-        user_comparison_outcomes: List[Tuple[NodeComparison, NodeComparisonOutcome]],
+        user_comparison_outcomes: List[SpanComparisonOutcome],
     ):
         raise NotImplementedError
