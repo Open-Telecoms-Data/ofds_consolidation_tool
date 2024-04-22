@@ -99,8 +99,8 @@ class Comparison:
 
     def compare_array_codelist_equals(self, first, second):
         """Score arrays 1 if they are identical, 0 if not."""
-        list(first).sort()
-        list(second).sort()
+        list(first or []).sort()
+        list(second or []).sort()
         return 1 if first == second and first != [] else 0
 
     def compare_array_codelist_matches(self, first, second):
