@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import ClassVar, Dict, Generic, List, Type, TypeVar, Union, Tuple, cast
+from typing import ClassVar, Dict, Generic, List, Type, Union, Tuple, cast
 from enum import Enum
 
 
@@ -24,7 +24,7 @@ from ..model.comparison import (
     SpanComparisonOutcome,
 )
 
-from ..model.network import Network, Node, Span
+from ..model.network import Network, Node, Span, FeatureT
 from ..view_warningbox import (
     show_node_incomplete_consolidation_warning,
     show_multi_consolidation_warning,
@@ -64,10 +64,7 @@ class ToolLayerSelectState(AbstractToolState):
         return f"<ToolLayerSelectState n_layers={len(self.selectableLayers)}>"
 
 
-FeatT = TypeVar("FeatT", Node, Span)
-
-
-class AbstractToolComparisonState(Generic[FeatT, ComparisonT], AbstractToolState):
+class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolState):
     ComparisonOutcomeCls: Type[ComparisonOutcome[ComparisonT]]
 
     # Global Settings
@@ -77,7 +74,7 @@ class AbstractToolComparisonState(Generic[FeatT, ComparisonT], AbstractToolState
     networks: Tuple[Network, Network]
 
     # Consolidator
-    consolidator: AbstractNetworkConsolidator[ComparisonT]
+    consolidator: AbstractNetworkConsolidator[FeatureT, ComparisonT]
     comparisons_outcomes: List[
         Tuple[ComparisonT, Union[None, ComparisonOutcome[ComparisonT]]]
     ]
@@ -88,7 +85,7 @@ class AbstractToolComparisonState(Generic[FeatT, ComparisonT], AbstractToolState
     def __init__(
         self,
         networks: Tuple[Network, Network],
-        consolidator: AbstractNetworkConsolidator[ComparisonT],
+        consolidator: AbstractNetworkConsolidator[FeatureT, ComparisonT],
         settings: Settings,
     ):
         self.settings = settings
@@ -157,8 +154,8 @@ class AbstractToolComparisonState(Generic[FeatT, ComparisonT], AbstractToolState
 
         # Find all other comparisons containing one of the now-consolidated features,
         # and set them to "Not Same", because we can only consolidate a node once.
-        other_comparisons_with_span_a: List[Tuple[int, FeatT]] = list()
-        other_comparisons_with_span_b: List[Tuple[int, FeatT]] = list()
+        other_comparisons_with_span_a: List[Tuple[int, FeatureT]] = list()
+        other_comparisons_with_span_b: List[Tuple[int, FeatureT]] = list()
 
         for other_i in range(len(self.comparisons_outcomes)):
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]

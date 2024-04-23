@@ -74,8 +74,11 @@ class Comparison:
     def feature_b(self):
         return self.features[1]
 
-    def __init__(self, weights={}):
-        self.weights = weights
+    def __init__(self, weights=None):
+        if weights:
+            self.weights = weights
+        else:
+            self.weights = dict()
 
     def weight(self, prop):
         return self.weights.get(prop)
@@ -371,9 +374,6 @@ class SpanComparison(Comparison):
             ),
             "deployment": self.compare_array_codelist_equals(
                 span_a.get("deployment"), span_b.get("deployment")
-            ),
-            "fibreType": self.compare_equals(
-                span_a.get("fibreType"), span_b.get("fibreType")
             ),
             "supplier": self.compare_strings(
                 span_a.get("supplier"), span_b.get("supplier")

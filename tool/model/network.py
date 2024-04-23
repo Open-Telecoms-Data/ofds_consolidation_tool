@@ -1,7 +1,7 @@
 import json
 
 from enum import Enum
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, TypeVar, cast
 
 from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
 
@@ -241,6 +241,9 @@ class Span(Feature):
     def __str__(self):
         name = self.properties["name"] if "name" in self.properties else self.id
         return f"<Span {name}>"
+
+
+FeatureT = TypeVar("FeatureT", Node, Span)
 
 
 class Network:
