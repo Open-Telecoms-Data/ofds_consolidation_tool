@@ -4,7 +4,7 @@ from typing import Dict, Generic, List, Set, Tuple, Type
 import json
 import logging
 
-from qgis.core import QgsVectorLayer, QgsProject
+from qgis.core import QgsVectorLayer, QgsProject, QgsFeature
 
 from .network import Node, Network, Span, FeatureT
 from .comparison import (
@@ -74,7 +74,9 @@ class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
                 strs = [feat.get(k) for feat in [primary, secondary] if feat.get(k)]
                 set_prop(k, ", ".join(strs))
 
-        return self.FeatureCls(primary.id, props, primary.feature)
+        return self.FeatureCls(
+            primary.id, props, primary.featureId, primary.featureGeometry
+        )
 
 
 class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]):
@@ -198,13 +200,14 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
     def finalise_with_user_comparison_outcomes(
         self,
         user_comparison_outcomes: List[Tuple[NodeComparison, NodeComparisonOutcome]],
-    ) -> List[NodeComparisonOutcome]:
+    ):
         """
         This method should be called after the user has been asked about all manual
         comparisons, and implements the results i.e. consolidating (or not) and adding
         to the consolidated network.
         """
         for comparison, outcome in user_comparison_outcomes:
+            # TODO: Add "provenance" property here
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Node)
                 assert isinstance(outcome.consolidate.secondary, Node)
@@ -222,8 +225,6 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
                 # no match: keep both
                 self.nodes.append((comparison.node_a, outcome))
                 self.nodes.append((comparison.node_b, outcome))
-
-        return list(co for (n, co) in self.nodes)
 
     def _remap_network_b_span_node_ids(self, span: Span) -> Span:
         new_properties = span.properties.copy()
@@ -246,15 +247,22 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         new_properties["start"] = p_start
         new_properties["end"] = p_end
 
-        new_span = Span(span.id, properties=new_properties, feature=span.feature)
+        new_span = Span(
+            span.id,
+            properties=new_properties,
+            featureId=span.featureId,
+            featureGeometry=span.featureGeometry,
+        )
         return new_span
 
     def get_networks_with_consolidated_nodes(self) -> Tuple[Network, Network]:
-        qgs_layer = self._qgis_layer_from_nodes(set([n for (n, o) in self.nodes]))
+        qgs_layer, nodes = self._qgis_layer_from_nodes(
+            set([n for (n, o) in self.nodes])
+        )
 
         # Network A IDs never change, so no remapping needed
         new_network_a = Network(
-            nodes=[n for (n, _) in self.nodes],
+            nodes=nodes,
             nodesLayer=qgs_layer,
             spans=self.network_a.spans,
             spansLayer=self.network_a.spansLayer,
@@ -262,7 +270,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
         # Network B span start/end IDs may be remapped
         new_network_b = Network(
-            nodes=[n for (n, _) in self.nodes],
+            nodes=nodes,
             nodesLayer=qgs_layer,
             spans=list(
                 self._remap_network_b_span_node_ids(span)
@@ -273,30 +281,61 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
         return (new_network_a, new_network_b)
 
-    def _qgis_layer_from_nodes(self, nodes: Set[Node]) -> QgsVectorLayer:
+    def _qgis_layer_from_nodes(
+        self, nodes: Set[Node]
+    ) -> Tuple[QgsVectorLayer, List[Node]]:
         LAYER_NAME = "_ofds_consolidated_nodes"
-
-        # TODO: Tidy up (i.e. remove) this layer after we're done
-        layer_uri = "Point?crs=epsg:4326&index=yes"
-        layer = QgsVectorLayer(layer_uri, LAYER_NAME, "memory")
-        layer.setCustomProperty("skipMemoryLayersCheck", 1)
-        driver = layer.dataProvider()
-        assert driver
-
-        for node in nodes:
-            driver.addFeature(node.feature)
 
         project = QgsProject.instance()
         assert project
 
         # Remove an old intermediate layers from previous tool uses
         if len(project.mapLayersByName(LAYER_NAME)) > 0:
-            project.removeMapLayers([LAYER_NAME])
+            project.removeMapLayers(
+                [layer.id() for layer in project.mapLayersByName(LAYER_NAME)]
+            )
+
+        # Create the new QgsVectorLayer from consolidated Nodes
+        # TODO: Tidy up (i.e. remove) this layer after we're done?
+        layer_uri = "Point?crs=epsg:4326&index=yes"
+        layer = QgsVectorLayer(layer_uri, LAYER_NAME, "memory")
+        layer.setCustomProperty("skipMemoryLayersCheck", 1)
+
+        layer_data = layer.dataProvider()
+        assert layer_data
+
+        fields = Node.get_qgs_fields()
+
+        layer.startEditing()
+        layer_data.addAttributes(fields.toList())
+        layer.commitChanges()
+
+        logger.debug(f"Adding {len(nodes)} Nodes to QgsVectorLayer")
+
+        new_nodes: List[Node] = list()
+
+        # Create a new QgsFeature for each new Node, copying old Geometry + consolidated properties
+        #  + new Nodes because featureId changes w/ a new layer
+        for node in nodes:
+            new_feature = QgsFeature(fields)
+            new_feature.setGeometry(node.featureGeometry)
+            for field in fields:
+                if field.name() in node.properties:
+                    new_feature.setAttribute(
+                        field.name(), node.properties[field.name()]
+                    )
+            layer_data.addFeature(new_feature)
+            new_nodes.append(
+                Node(node.id, node.properties, new_feature.id(), new_feature.geometry())
+            )
+
+        layer.updateExtents()
 
         # TODO: Change visibility from True to False when we're not testing anymore
+        #       or make it a setting?
         project.addMapLayer(layer, True)
 
-        return layer
+        return (layer, new_nodes)
 
 
 class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]):
@@ -370,18 +409,21 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
 
         return matches
 
-    def finalise_with_user_comparison_outcomes(
+    def get_consolidated_network_with_user_comparison_outcomes(
         self,
         user_comparison_outcomes: List[SpanComparisonOutcome],
-    ) -> List[SpanComparisonOutcome]:
+    ) -> Network:
         """
         This method should be called after the user has been asked about all manual
         comparisons, and implements the results i.e. consolidating (or not) and adding
         to the consolidated network.
+
+        Returns the consolidated Network.https://github.com/Open-Telecoms-Data/ofds_consolidation_tool/tree/rg/spans-comparison-functionality
         """
         spans: List[Tuple[Span, SpanComparisonOutcome]] = list()
 
         for outcome in user_comparison_outcomes:
+            # TODO: Add provenance property to each Span
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Span)
                 assert isinstance(outcome.consolidate.secondary, Span)
@@ -400,8 +442,16 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
                 spans.append((outcome.comparison.span_a, outcome))
                 spans.append((outcome.comparison.span_b, outcome))
 
-        self.spans = spans
-        return list(co for (n, co) in spans)
+        nodes_layer = QgsVectorLayer()
+        spans_layer = QgsVectorLayer()
+
+        return Network(
+            # at this point, nodes are the same for both networks
+            nodes=self.network_a.nodes,
+            spans=[s for (s, _) in spans],
+            nodesLayer=nodes_layer,
+            spansLayer=spans_layer,
+        )
 
     def _remap_network_b_span_node_ids(self, span: Span) -> Span:
         new_properties = span.properties.copy()
@@ -417,5 +467,10 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
         new_properties["start"] = p_start
         new_properties["end"] = p_end
 
-        new_span = Span(span.id, properties=new_properties, feature=span.feature)
+        new_span = Span(
+            span.id,
+            properties=new_properties,
+            featureId=span.featureId,
+            featureGeometry=span.featureGeometry,
+        )
         return new_span

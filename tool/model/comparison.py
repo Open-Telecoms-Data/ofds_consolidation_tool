@@ -295,12 +295,12 @@ class NodeComparison(Comparison):
         return dist_km
 
     @property
-    def distance_km(self):
-        assert self.node_a.feature.geometry().wkbType() == QgsWkbTypes.Type.Point
-        assert self.node_b.feature.geometry().wkbType() == QgsWkbTypes.Type.Point
+    def distance_km(self) -> float:
+        assert self.node_a.featureGeometry.wkbType() == QgsWkbTypes.Type.Point
+        assert self.node_b.featureGeometry.wkbType() == QgsWkbTypes.Type.Point
 
-        point_a = self.node_a.feature.geometry().asPoint()
-        point_b = self.node_b.feature.geometry().asPoint()
+        point_a = self.node_a.featureGeometry.asPoint()
+        point_b = self.node_b.featureGeometry.asPoint()
 
         return self._point_distance_km(point_a, point_b)
 
@@ -364,7 +364,8 @@ class SpanComparison(Comparison):
                 span_a.get("networkProviders"),
                 span_b.get("networkProviders"),
             ),
-            # TODO: check what actual format readyForServiceDate should be and if we should do proper date comparision
+            # TODO: check what actual format readyForServiceDate should be and if we
+            #       should do proper date comparision
             # it's just a string in the standard
             "readyForServiceDate": self.compare_equals(
                 span_a.get("readyForServiceDate"), span_b.get("readyForServiceDate")

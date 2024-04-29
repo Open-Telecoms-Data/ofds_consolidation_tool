@@ -3,7 +3,17 @@ import json
 from enum import Enum
 from typing import Any, Dict, List, TypeVar, cast
 
-from qgis.core import QgsFeature, QgsSpatialIndex, QgsVectorLayer, QgsWkbTypes
+from PyQt5.QtCore import QVariant
+
+from qgis.core import (
+    QgsFeature,
+    QgsSpatialIndex,
+    QgsVectorLayer,
+    QgsWkbTypes,
+    QgsField,
+    QgsFields,
+    QgsGeometry,
+)
 
 
 NESTED_PROPERTIES = [
@@ -34,9 +44,9 @@ class Feature:
     Wrapper around an OFDS-compliant QgsFeature.
     """
 
-    feature: QgsFeature
     featureId: int  # featureId is the QGIS-internal Id
     featureType: FeatureType
+    featureGeometry: QgsGeometry
     id: str  # id is the OFDS id
     properties: Dict[str, Any]
 
@@ -57,25 +67,35 @@ class Feature:
         if "id" not in properties or not isinstance(properties["id"], str):
             raise OFDSInvalidFeature
         ofds_id = properties["id"]
-        return cls(id=ofds_id, properties=properties, feature=feature)
+        return cls(
+            id=ofds_id,
+            properties=properties,
+            featureId=feature.id(),
+            featureGeometry=feature.geometry(),
+        )
 
-    def __init__(self, id: str, properties: Dict[str, Any], feature: QgsFeature):
+    def __init__(
+        self,
+        id: str,
+        properties: Dict[str, Any],
+        featureId: int,
+        featureGeometry: QgsGeometry,
+    ):
         self.id = id
         self.properties = self._convert_properties(properties)
-        self.feature = feature
-        self.featureId = self.feature.id()
+        self.featureId = featureId
+        self.featureGeometry = featureGeometry
 
         if (
             self.featureType == FeatureType.NODE
-            and not self.feature.geometry().type()
+            and not self.featureGeometry.type()
             == QgsWkbTypes.GeometryType.PointGeometry
         ):
             raise OFDSInvalidFeature("Nodes layer must be PointGeometry")
 
         if (
             self.featureType == FeatureType.SPAN
-            and not self.feature.geometry().type()
-            == QgsWkbTypes.GeometryType.LineGeometry
+            and not self.featureGeometry.type() == QgsWkbTypes.GeometryType.LineGeometry
         ):
             raise OFDSInvalidFeature("Spans layer must be LineGeometry")
 
@@ -101,6 +121,43 @@ class Feature:
 
 class Node(Feature):
     featureType = FeatureType.NODE
+
+    @classmethod
+    def get_qgs_fields(cls) -> QgsFields:
+        # Node fields according to schema:
+        # https://open-fibre-data-standard.readthedocs.io/en/0.3/reference/schema.html#node
+        fields = [
+            QgsField(name="id", type=QVariant.Type.String),
+            QgsField(name="featureType", type=QVariant.Type.String),
+            QgsField(name="name", type=QVariant.Type.String),
+            QgsField(name="phase", type=QVariant.Type.Map),
+            QgsField(name="status", type=QVariant.Type.String),
+            QgsField(name="address", type=QVariant.Type.Map),
+            QgsField(name="type", type=QVariant.Type.StringList),
+            QgsField(name="accessPoint", type=QVariant.Type.Bool),
+            QgsField(
+                name="internationalConnections",
+                type=QVariant.Type.List,
+                subType=QVariant.Type.Map,
+            ),
+            QgsField(name="power", type=QVariant.Type.Bool),
+            QgsField(name="technologies", type=QVariant.Type.StringList),
+            QgsField(name="physicalInfrastructureProvider", type=QVariant.Type.Map),
+            QgsField(
+                name="networkProviders",
+                type=QVariant.Type.List,
+                subType=QVariant.Type.Map,
+            ),
+            QgsField(name="network", type=QVariant.Type.Map),
+            # provenance is non-standard field added by this tool
+            QgsField(name="provenance", type=QVariant.Type.Map),
+        ]
+
+        qgs_fields = QgsFields()
+        for field in fields:
+            qgs_fields.append(field)
+
+        return qgs_fields
 
     def _convert_properties(self, properties):
         return super()._convert_properties(properties)
@@ -128,7 +185,7 @@ class Node(Feature):
                 return None
 
         if k == "coordinates":
-            return self.feature.geometry().asPoint().toString()
+            return self.featureGeometry.asPoint().toString()
 
         if k == "phase/name":
             phase = self.properties.get("phase", {})
@@ -180,6 +237,50 @@ class Node(Feature):
 
 class Span(Feature):
     featureType = FeatureType.SPAN
+
+    @classmethod
+    def get_qgs_fields(cls) -> QgsFields:
+        # Span fields according to schema:
+        # https://open-fibre-data-standard.readthedocs.io/en/0.3/reference/schema.html#span
+        fields = [
+            QgsField(name="id", type=QVariant.Type.String),
+            QgsField(name="featureType", type=QVariant.Type.String),
+            QgsField(name="name", type=QVariant.Type.String),
+            QgsField(name="phase", type=QVariant.Type.Map),
+            QgsField(name="status", type=QVariant.Type.String),
+            QgsField(name="readyForServiceDate", type=QVariant.Type.String),
+            QgsField(name="start", type=QVariant.Type.Map),
+            QgsField(name="end", type=QVariant.Type.Map),
+            QgsField(name="directed", type=QVariant.Type.Bool),
+            QgsField(name="physicalInfrastructureProvider", type=QVariant.Type.Map),
+            QgsField(
+                name="networkProviders",
+                type=QVariant.Type.List,
+                subType=QVariant.Type.Map,
+            ),
+            QgsField(name="supplier", type=QVariant.Type.Map),
+            QgsField(name="transmissionMedium", type=QVariant.Type.StringList),
+            QgsField(name="deployment", type=QVariant.Type.StringList),
+            QgsField(name="deploymentDetails", type=QVariant.Type.Map),
+            QgsField(name="darkFibre", type=QVariant.Type.Bool),
+            QgsField(name="fibreType", type=QVariant.Type.String),
+            QgsField(name="fibreTypeDetails", type=QVariant.Type.Map),
+            QgsField(name="fibreCount", type=QVariant.Type.Int),
+            QgsField(name="fibreLength", type=QVariant.Type.Double),
+            QgsField(name="technologies", type=QVariant.Type.StringList),
+            QgsField(name="capacity", type=QVariant.Type.Double),
+            QgsField(name="capacityDetails", type=QVariant.Type.Map),
+            QgsField(name="countries", type=QVariant.Type.StringList),
+            QgsField(name="network", type=QVariant.Type.Map),
+            # provenance is non-standard field added by this tool
+            QgsField(name="provenance", type=QVariant.Type.Map),
+        ]
+
+        qgs_fields = QgsFields()
+        for field in fields:
+            qgs_fields.append(field)
+
+        return qgs_fields
 
     def get(self, k):
         """

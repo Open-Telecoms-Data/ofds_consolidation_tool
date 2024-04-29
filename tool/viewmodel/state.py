@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod
-from typing import ClassVar, Dict, Generic, List, Type, Union, Tuple, cast
+from typing import ClassVar, Generic, List, Type, Union, Tuple, cast
 from enum import Enum
 
 
@@ -268,7 +268,7 @@ class ToolNodeComparisonState(AbstractToolComparisonState[Node, NodeComparison])
                         NodeComparisonOutcome(comparison=comparison, consolidate=False),
                     )
 
-        final_outcomes = self.consolidator.finalise_with_user_comparison_outcomes(
+        self.consolidator.finalise_with_user_comparison_outcomes(
             cast(
                 List[Tuple[NodeComparison, NodeComparisonOutcome]],
                 self.comparisons_outcomes,
@@ -281,7 +281,6 @@ class ToolNodeComparisonState(AbstractToolComparisonState[Node, NodeComparison])
 
         span_comparison_state = ToolSpanComparisonState(
             networks=(new_network_a, new_network_b),
-            nodes_provenance=final_outcomes,
             settings=self.settings,
         )
 
@@ -303,34 +302,19 @@ class ToolSpanComparisonState(AbstractToolComparisonState[Span, SpanComparison])
 
     consolidator: NetworkSpansConsolidator
 
-    # Dict of Node ID to ComparisonOutcome
-    nodes_provenance: Dict[str, NodeComparisonOutcome]
-
     def __init__(
         self,
         networks: Tuple[Network, Network],
         settings: Settings,
-        nodes_provenance: List[NodeComparisonOutcome],
     ):
         consolidator = NetworkSpansConsolidator(
-            network_a=networks[0], network_b=networks[1]
+            network_a=networks[0],
+            network_b=networks[1],
         )
 
         super().__init__(
             networks=networks, consolidator=consolidator, settings=settings
         )
-
-        self.nodes_provenance = dict()
-
-        # Build dict of nodes provenance
-        co: NodeComparisonOutcome
-        for co in nodes_provenance:
-            if co.consolidate is False:
-                self.nodes_provenance[co.comparison.node_a.id] = co
-                self.nodes_provenance[co.comparison.node_b.id] = co
-
-            elif isinstance(co.consolidate, ConsolidationReason):
-                self.nodes_provenance[co.consolidate.primary.id] = co
 
     def finish(self) -> "ToolOutputState":
         raise NotImplementedError("TODO")
