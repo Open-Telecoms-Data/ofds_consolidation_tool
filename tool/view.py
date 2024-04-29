@@ -41,6 +41,10 @@ from .viewmodel.state import (
 
 logger = logging.getLogger(__name__)
 
+# Scale ratio of the displayed minimaps when showing Nodes
+# e.g. 1:25,000 would be 25000
+MINIMAP_SCALE_RATIO = 100000  # 1:100,000
+
 
 class InvalidViewState(Exception):
     pass
@@ -139,7 +143,7 @@ class MiniMapView:
         if state.featureType == FeatureType.NODE:
             self.mapCanvas.zoomToFeatureIds(self.layers.nodesLayer, [state.featureId])
             self.layers.nodesLayer.selectByIds([state.featureId])
-            self.mapCanvas.zoomScale(25000.0)
+            self.mapCanvas.zoomScale(MINIMAP_SCALE_RATIO)
 
         elif state.featureType == FeatureType.SPAN:
             self.mapCanvas.zoomToFeatureIds(self.layers.spansLayer, [state.featureId])
