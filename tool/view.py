@@ -75,8 +75,8 @@ class MiniMapView:
 
         nodesLayer: QgsVectorLayer
         spansLayer: QgsVectorLayer
-        featureId: int
-        featureType: FeatureType
+        featureId: Optional[int]
+        featureType: Optional[FeatureType]
 
     @dataclass(frozen=True)
     class Layers:
@@ -140,17 +140,24 @@ class MiniMapView:
             raise InvalidViewState("Unexpected Layer change")
 
         # Zoom the map to and hilight the relevent feature
-        if state.featureType == FeatureType.NODE:
-            self.mapCanvas.zoomToFeatureIds(self.layers.nodesLayer, [state.featureId])
-            self.layers.nodesLayer.selectByIds([state.featureId])
-            self.mapCanvas.zoomScale(MINIMAP_SCALE_RATIO)
+        if state.featureType is not None and state.featureId is not None:
+            if state.featureType == FeatureType.NODE:
+                self.mapCanvas.zoomToFeatureIds(
+                    self.layers.nodesLayer, [state.featureId]
+                )
+                self.layers.nodesLayer.selectByIds([state.featureId])
+                self.mapCanvas.zoomScale(MINIMAP_SCALE_RATIO)
 
-        elif state.featureType == FeatureType.SPAN:
-            self.mapCanvas.zoomToFeatureIds(self.layers.spansLayer, [state.featureId])
-            self.layers.spansLayer.selectByIds([state.featureId])
+            elif state.featureType == FeatureType.SPAN:
+                self.mapCanvas.zoomToFeatureIds(
+                    self.layers.spansLayer, [state.featureId]
+                )
+                self.layers.spansLayer.selectByIds([state.featureId])
 
+            else:
+                raise InvalidViewState
         else:
-            raise InvalidViewState
+            self.zoomToEverything()
 
         # We need to "refresh" to rerender the map after changing it
         self.mapCanvas.refresh()
@@ -452,6 +459,28 @@ class ComparisonView:
             self._updateNotComparing()
 
 
+class OutputView:
+    minimapview: MiniMapView
+
+    # TODO: Add style!
+    def __init__(self, project: QgsProject, mapCanvas: QgsMapCanvas):
+        osmLayer = getOpenStreetMapLayer(project)
+        self.minimapview = MiniMapView(mapCanvas=mapCanvas, backgroundLayer=osmLayer)
+
+    def update(self, state: Optional[ToolState]):
+        if isinstance(state, ToolOutputState):
+            self.minimapview.update(
+                MiniMapView.State(
+                    nodesLayer=state.output_network.nodesLayer,
+                    spansLayer=state.output_network.spansLayer,
+                    featureId=None,
+                    featureType=None,
+                )
+            )
+        else:
+            self.minimapview.update(None)
+
+
 #
 # Top-level view
 #
@@ -464,6 +493,7 @@ class ToolView:
 
     layerSelectView: LayerSelectView
     nodeComparisonView: ComparisonView
+    outputView: OutputView
     tabWidget: QTabWidget
 
     def __init__(self, project: QgsProject, ui: Ui_OFDSDedupToolDialog):
@@ -499,6 +529,8 @@ class ToolView:
             finishButton=ui.spansFinishedButton,
         )
 
+        self.outputView = OutputView(project=project, mapCanvas=ui.outputMapCanvas)
+
         self.tabWidget = ui.tabWidget
 
     def update(self, state: Optional[ToolState]):
@@ -521,4 +553,7 @@ class ToolView:
             self.spanComparisonView.update(None)
 
         if isinstance(state, ToolOutputState):
-            raise NotImplementedError
+            self.tabWidget.setCurrentIndex(3)
+            self.outputView.update(state)
+        else:
+            self.outputView.update(None)

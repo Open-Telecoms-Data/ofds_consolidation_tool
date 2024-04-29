@@ -20,7 +20,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <property name="usesScrollButtons">
       <bool>false</bool>
@@ -483,6 +483,41 @@
       <attribute name="title">
        <string>Output</string>
       </attribute>
+      <widget class="QPushButton" name="outputFinishedButton">
+       <property name="geometry">
+        <rect>
+         <x>390</x>
+         <y>820</y>
+         <width>103</width>
+         <height>36</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Finished</string>
+       </property>
+      </widget>
+      <widget class="QgsMapCanvas" name="outputMapCanvas" native="true">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>911</width>
+         <height>751</height>
+        </rect>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>300</height>
+        </size>
+       </property>
+      </widget>
      </widget>
     </widget>
    </item>

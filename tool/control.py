@@ -10,6 +10,7 @@ from .model.network import Network
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
+    ToolOutputState,
     ToolSpanComparisonState,
     ToolState,
 )
@@ -131,7 +132,11 @@ class ToolController:
             return state.finish()
 
         elif isinstance(state, ToolSpanComparisonState):
-            raise NotImplementedError("TODO")  # TODO
+            return state.finish()
+
+        elif isinstance(state, ToolOutputState):
+            # Restart the tool when finished
+            return self.onInit()
 
         else:
             raise ControllerInvalidState

@@ -246,11 +246,23 @@ class Ui_OFDSDedupToolDialog(object):
         self.tabWidget.addTab(self.tabConsolidateSpans, "")
         self.tabOutput = QtWidgets.QWidget()
         self.tabOutput.setObjectName("tabOutput")
+        self.outputFinishedButton = QtWidgets.QPushButton(self.tabOutput)
+        self.outputFinishedButton.setGeometry(QtCore.QRect(390, 820, 103, 36))
+        self.outputFinishedButton.setObjectName("outputFinishedButton")
+        self.outputMapCanvas = gui.QgsMapCanvas(self.tabOutput)
+        self.outputMapCanvas.setGeometry(QtCore.QRect(10, 10, 911, 751))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.outputMapCanvas.sizePolicy().hasHeightForWidth())
+        self.outputMapCanvas.setSizePolicy(sizePolicy)
+        self.outputMapCanvas.setMinimumSize(QtCore.QSize(0, 300))
+        self.outputMapCanvas.setObjectName("outputMapCanvas")
         self.tabWidget.addTab(self.tabOutput, "")
         self.verticalLayout.addWidget(self.tabWidget)
 
         self.retranslateUi(OFDSDedupToolDialog)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(3)
         QtCore.QMetaObject.connectSlotsByName(OFDSDedupToolDialog)
 
     def retranslateUi(self, OFDSDedupToolDialog):
@@ -289,5 +301,6 @@ class Ui_OFDSDedupToolDialog(object):
         self.spansPrevButton.setText(_translate("OFDSDedupToolDialog", "< Previous"))
         self.spansNotSameButton.setText(_translate("OFDSDedupToolDialog", "Not Same"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabConsolidateSpans), _translate("OFDSDedupToolDialog", "Consolidate Spans"))
+        self.outputFinishedButton.setText(_translate("OFDSDedupToolDialog", "Finished"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabOutput), _translate("OFDSDedupToolDialog", "Output"))
 from qgis import gui

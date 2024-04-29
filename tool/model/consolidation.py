@@ -345,12 +345,17 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
     network_a: Network
     network_b: Network
 
+    matched_spans_in_a: Set[str]
+    matched_spans_in_b: Set[str]
+
     network_b_ids_map: Dict[str, str]
 
     def __init__(self, network_a: Network, network_b: Network):
         self.network_a = network_a
         self.network_b = network_b
         self.network_b_ids_map = dict()
+        self.matched_spans_in_a = set()
+        self.matched_spans_in_b = set()
 
     PROPS_TO_COPY = [
         "name",
@@ -406,6 +411,8 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
             # Got a match!
             if span_a_lookup is not None:
                 matches.append(SpanComparison(span_a_lookup, span_b))
+                self.matched_spans_in_a.add(span_a_lookup.id)
+                self.matched_spans_in_b.add(span_b.id)
 
         return matches
 
@@ -420,38 +427,99 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
 
         Returns the consolidated Network.https://github.com/Open-Telecoms-Data/ofds_consolidation_tool/tree/rg/spans-comparison-functionality
         """
-        spans: List[Tuple[Span, SpanComparisonOutcome]] = list()
+        spans: List[Span] = list()
 
+        # First add all non-matched (i.e. non-compared) Spans
+        for span_a in self.network_a.spans:
+            if span_a not in self.matched_spans_in_a:
+                spans.append(span_a)
+
+        for span_b in self.network_b.spans:
+            if span_b not in self.matched_spans_in_b:
+                spans.append(span_b)
+
+        # Then consolidate based on user comparison outcomes
         for outcome in user_comparison_outcomes:
             # TODO: Add provenance property to each Span
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Span)
                 assert isinstance(outcome.consolidate.secondary, Span)
                 spans.append(
-                    (
-                        self._merge_features(
-                            outcome.consolidate.primary,
-                            outcome.consolidate.secondary,
-                        ),
-                        outcome,
+                    self._merge_features(
+                        outcome.consolidate.primary,
+                        outcome.consolidate.secondary,
                     )
                 )
 
             else:
                 # no match: keep both
-                spans.append((outcome.comparison.span_a, outcome))
-                spans.append((outcome.comparison.span_b, outcome))
+                spans.append(outcome.comparison.span_a)
+                spans.append(outcome.comparison.span_b)
 
-        nodes_layer = QgsVectorLayer()
-        spans_layer = QgsVectorLayer()
+        spans_layer, new_spans = self._create_qgis_layer_from_spans(spans)
 
         return Network(
             # at this point, nodes are the same for both networks
             nodes=self.network_a.nodes,
-            spans=[s for (s, _) in spans],
-            nodesLayer=nodes_layer,
+            spans=new_spans,
+            nodesLayer=self.network_a.nodesLayer,
             spansLayer=spans_layer,
         )
+
+    def _create_qgis_layer_from_spans(
+        self, spans: List[Span]
+    ) -> Tuple[QgsVectorLayer, List[Span]]:
+        LAYER_NAME = "_ofds_consolidated_spans"
+
+        project = QgsProject.instance()
+        assert project
+
+        # Remove an old intermediate layers from previous tool uses
+        if len(project.mapLayersByName(LAYER_NAME)) > 0:
+            project.removeMapLayers(
+                [layer.id() for layer in project.mapLayersByName(LAYER_NAME)]
+            )
+
+        # Create the new QgsVectorLayer from consolidated Spans
+        layer_uri = "LineString?crs=epsg:4326&index=yes"
+        layer = QgsVectorLayer(layer_uri, LAYER_NAME, "memory")
+        layer.setCustomProperty("skipMemoryLayersCheck", 1)
+
+        layer_data = layer.dataProvider()
+        assert layer_data
+
+        fields = Span.get_qgs_fields()
+
+        layer.startEditing()
+        layer_data.addAttributes(fields.toList())
+        layer.commitChanges()
+
+        logger.debug(f"Adding {len(spans)} Spans to QgsVectorLayer")
+
+        new_spans: List[Span] = list()
+
+        # Create a new QgsFeature for each new Node, copying old Geometry + consolidated properties
+        #  + new Nodes because featureId changes w/ a new layer
+        for span in spans:
+            new_feature = QgsFeature(fields)
+            new_feature.setGeometry(span.featureGeometry)
+            for field in fields:
+                if field.name() in span.properties:
+                    new_feature.setAttribute(
+                        field.name(), span.properties[field.name()]
+                    )
+            layer_data.addFeature(new_feature)
+            new_spans.append(
+                Span(span.id, span.properties, new_feature.id(), new_feature.geometry())
+            )
+
+        layer.updateExtents()
+
+        # TODO: Change visibility from True to False when we're not testing anymore
+        #       or make it a setting?
+        project.addMapLayer(layer, True)
+
+        return (layer, new_spans)
 
     def _remap_network_b_span_node_ids(self, span: Span) -> Span:
         new_properties = span.properties.copy()

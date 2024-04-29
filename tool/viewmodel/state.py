@@ -316,12 +316,34 @@ class ToolSpanComparisonState(AbstractToolComparisonState[Span, SpanComparison])
             networks=networks, consolidator=consolidator, settings=settings
         )
 
-    def finish(self) -> "ToolOutputState":
-        raise NotImplementedError("TODO")
+    def finish(self) -> "ToolState":
+        if not self.all_compared:
+            show_warningbox(
+                "Not all spans compared",
+                "Please finish comparing spans before proceeding to output",
+            )
+            return self
+
+        outcomes: List[SpanComparisonOutcome] = [
+            cast(SpanComparisonOutcome, outcome)
+            for (_, outcome) in self.comparisons_outcomes
+            if outcome
+        ]
+
+        return ToolOutputState(
+            network=self.consolidator.get_consolidated_network_with_user_comparison_outcomes(
+                outcomes
+            )
+        )
 
 
 class ToolOutputState(AbstractToolState):
     state = ToolStateEnum.OUTPUT
+
+    output_network: Network
+
+    def __init__(self, network: Network) -> None:
+        self.output_network = network
 
 
 ToolState = Union[
