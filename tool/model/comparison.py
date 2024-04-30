@@ -5,7 +5,7 @@ from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea, QgsUnitTypes
 
 from .network import Feature, Node, Span
 
-from ..._lib.jellyfish import _jellyfish as jellyfish
+from .._lib.jellyfish import _jellyfish as jellyfish
 
 logger = logging.getLogger(__name__)
 
@@ -117,8 +117,8 @@ class Comparison:
 
     def compare_array_codelist_matches(self, first, second):
         """Score arrays on a scale based on amount of overlap."""
-        first = set(first)
-        second = set(second)
+        first = set(first or [])
+        second = set(second or [])
         intersection = first & second
         difference = first ^ second
         union = first | second
@@ -129,7 +129,7 @@ class Comparison:
             # No marks if no overlap at all
             return 0
         # If more values the same than different, return a middling score
-        if len(intersection) - len(difference) > 0:
+        if len(union) - len(difference) > 0:
             return 0.75
         # Else return a low score - still some overlap.
         # This is very crude, should refine after seeing more data.
@@ -139,7 +139,7 @@ class Comparison:
         """
         Score arrays of free text strings based on string similarity.
         """
-        if first == [] or second == []:
+        if not first or not second:
             return 0
         scores = []
         for f in first:
