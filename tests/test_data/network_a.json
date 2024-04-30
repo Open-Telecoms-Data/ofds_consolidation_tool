@@ -1,0 +1,210 @@
+{
+    "networks": [
+        {
+            "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
+            "name": "Happy Haggis Fibre Backbone",
+            "nodes": [
+                {
+                    "id": "ecee33c8-cc0c-4315-ab7b-b6602f033d86",
+                    "name": "Glasgow",
+                    "address": {
+                        "country": "GB"
+                    },
+                    "networkProviders": [
+                        {
+                            "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                            "name": "Happy Haggis Fibre Co"
+                        }
+                    ],
+                    "location": {
+                        "coordinates": [
+                            -4.252606805462818,
+                            55.859869035181475
+                        ],
+                        "type": "Point"
+                    }
+                },
+                {
+                    "id": "887ec02b-972d-4d84-8e12-4e548c08bb5b",
+                    "name": "Edinburgh",
+                    "address": {
+                        "country": "GB"
+                    },
+                    "networkProviders": [
+                        {
+                            "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                            "name": "Happy Haggis Fibre Co"
+                        }
+                    ],
+                    "location": {
+                        "coordinates": [
+                            -3.186297389886022,
+                            55.94872697635043
+                        ],
+                        "type": "Point"
+                    }
+                },
+                {
+                    "id": "8b32ab5e-2a11-416d-a6e1-4fd46eb3c547",
+                    "name": "Stirling",
+                    "address": {
+                        "country": "GB"
+                    },
+                    "networkProviders": [
+                        {
+                            "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                            "name": "Happy Haggis Fibre Co"
+                        }
+                    ],
+                    "location": {
+                        "coordinates": [
+                            -3.9392175507450133,
+                            56.11378666511101
+                        ],
+                        "type": "Point"
+                    }
+                },
+                {
+                    "id": "6c14d3c1-1e4f-497b-ba4e-d23701084017",
+                    "name": "Dundee",
+                    "address": {
+                        "country": "GB"
+                    },
+                    "networkProviders": [
+                        {
+                            "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                            "name": "Happy Haggis Fibre Co"
+                        }
+                    ],
+                    "location": {
+                        "coordinates": [
+                            -2.9665608879619754,
+                            56.46763934193257
+                        ],
+                        "type": "Point"
+                    }
+                }
+            ],
+            "spans": [
+                {
+                    "id": "ecee33c8-cc0c-4315-ab7b-b6602f033d86",
+                    "start": "ecee33c8-cc0c-4315-ab7b-b6602f033d86",
+                    "end": "887ec02b-972d-4d84-8e12-4e548c08bb5b",
+                    "networkProviders": [
+                        {
+                            "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                            "name": "Happy Haggis Fibre Co"
+                        }
+                    ],
+                    "route": {
+                        "coordinates": [
+                            [
+                                -3.1919693529654296,
+                                55.95261739216542
+                            ],
+                            [
+                                -3.4415663366892773,
+                                55.92304552572239
+                            ],
+                            [
+                                -3.5496618239127145,
+                                55.914411718518124
+                            ],
+                            [
+                                -3.671952551894151,
+                                55.87072508375013
+                            ],
+                            [
+                                -3.9032699428070146,
+                                55.840494240401114
+                            ],
+                            [
+                                -3.9862737116039284,
+                                55.833570997290764
+                            ],
+                            [
+                                -4.089575697814297,
+                                55.85102695780361
+                            ],
+                            [
+                                -4.248211998432453,
+                                55.854322154094035
+                            ]
+                        ],
+                        "type": "LineString"
+                    }
+                },
+                {
+                    "id": "887ec02b-972d-4d84-8e12-4e548c08bb5b",
+                    "start": "ecee33c8-cc0c-4315-ab7b-b6602f033d86",
+                    "end": "8b32ab5e-2a11-416d-a6e1-4fd46eb3c547",
+                    "networkProviders": [
+                        {
+                            "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                            "name": "Happy Haggis Fibre Co"
+                        }
+                    ],
+                    "route": {
+                        "coordinates": [
+                            [
+                                -4.242159943354295,
+                                55.86107521655367
+                            ],
+                            [
+                                -4.061923686201851,
+                                55.92036487144401
+                            ],
+                            [
+                                -3.9131957002778677,
+                                56.00498062878651
+                            ],
+                            [
+                                -3.937280546578563,
+                                56.11288847037849
+                            ]
+                        ],
+                        "type": "LineString"
+                    }
+                },
+                {
+                    "id": "6c14d3c1-1e4f-497b-ba4e-d23701084017",
+                    "start": "8b32ab5e-2a11-416d-a6e1-4fd46eb3c547",
+                    "end": "6c14d3c1-1e4f-497b-ba4e-d23701084017",
+                    "networkProviders": [
+                        {
+                            "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                            "name": "Happy Haggis Fibre Co"
+                        }
+                    ],
+                    "route": {
+                        "coordinates": [
+                            [
+                                -3.9317352004511577,
+                                56.11974725895223
+                            ],
+                            [
+                                -3.984951552445665,
+                                56.19420530163575
+                            ],
+                            [
+                                -3.4568120580643438,
+                                56.39309559859433
+                            ],
+                            [
+                                -3.003001341881827,
+                                56.4753330351233
+                            ]
+                        ],
+                        "type": "LineString"
+                    }
+                }
+            ],
+            "organisations": [
+                {
+                    "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
+                    "name": "Happy Haggis Fibre Co"
+                }
+            ]
+        }
+    ]
+}

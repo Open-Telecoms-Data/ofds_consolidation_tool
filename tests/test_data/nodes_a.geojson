@@ -1,0 +1,88 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "ecee33c8-cc0c-4315-ab7b-b6602f033d86",
+                "name": "Glasgow",
+                "address": {"country": "GB"},
+                "networkProviders": [{"id": "6f6d709e-41ec-492a-a485-dd76544f4d0b", "name": "Happy Haggis Fibre Co"}],
+                "network": {
+                    "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
+                    "name": "Happy Haggis Fibre Backbone"
+                }
+            },
+            "geometry": {
+                "coordinates": [
+                    -4.252606805462818,
+                    55.859869035181475
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "887ec02b-972d-4d84-8e12-4e548c08bb5b",
+                "name": "Edinburgh",
+                "address": {"country": "GB"},
+                "networkProviders": [{"id": "6f6d709e-41ec-492a-a485-dd76544f4d0b", "name": "Happy Haggis Fibre Co"}],
+
+                "network": {
+                    "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
+                    "name": "Happy Haggis Fibre Backbone"
+                }
+            },
+            "geometry": {
+                "coordinates": [
+                    -3.186297389886022,
+                    55.94872697635043
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "8b32ab5e-2a11-416d-a6e1-4fd46eb3c547",
+                "name": "Stirling",
+                "address": {"country": "GB"},
+                "networkProviders": [{"id": "6f6d709e-41ec-492a-a485-dd76544f4d0b", "name": "Happy Haggis Fibre Co"}],
+
+                "network": {
+                    "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
+                    "name": "Happy Haggis Fibre Backbone"
+                }
+            },
+            "geometry": {
+                "coordinates": [
+                    -3.9392175507450133,
+                    56.11378666511101
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6c14d3c1-1e4f-497b-ba4e-d23701084017",
+                "name": "Dundee",
+                "address": {"country": "GB"},
+                "networkProviders": [{"id": "6f6d709e-41ec-492a-a485-dd76544f4d0b", "name": "Happy Haggis Fibre Co"}],
+
+                "network": {
+                    "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
+                    "name": "Happy Haggis Fibre Backbone"
+                }
+            },
+            "geometry": {
+                "coordinates": [
+                    -2.9665608879619754,
+                    56.46763934193257
+                ],
+                "type": "Point"
+            }
+        }
+    ]
+}

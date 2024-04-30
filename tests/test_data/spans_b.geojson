@@ -1,0 +1,158 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "46a160f4-fe21-4899-b3b2-48e2510306fd",
+                "start": {
+                    "id": "5bacfc8c-5a4b-4bf7-baf9-16e9ed1a697b",
+                    "name": "Glasgow City",
+                    "type": [
+                        "pop",
+                        "exchange"
+                    ],
+                    "networkProviders": [
+                        {
+                            "id": "c0c64241-ce6c-445b-9cbb-8078db6ba4ce",
+                            "name": "Sturdy Kilts Fibre Co-op"
+                        }
+                    ]
+                },
+                "end": {
+                    "id": "47ac41ce-989b-4792-b43b-96d8e9f7acef",
+                    "name": "Stirling City",
+                    "type": [
+                        "pop",
+                        "exchange"
+                    ],
+                    "networkProviders": [
+                        {
+                            "id": "c0c64241-ce6c-445b-9cbb-8078db6ba4ce",
+                            "name": "Sturdy Kilts Fibre Co-op"
+                        }
+                    ]
+                },
+                "network": {
+                    "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
+                    "name": "Sturdy Kilts Internet4All"
+                }
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        -4.249582920043167,
+                        55.85437433934587
+                    ],
+                    [
+                        -3.9537973872201064,
+                        56.11095671675665
+                    ]
+                ],
+                "type": "LineString"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "13e9fc51-ea98-4684-8873-522504b80bd8",
+                "start": {
+                    "id": "47ac41ce-989b-4792-b43b-96d8e9f7acef",
+                    "name": "Stirling City",
+                    "type": [
+                        "pop",
+                        "exchange"
+                    ],
+                    "networkProviders": [
+                        {
+                            "id": "c0c64241-ce6c-445b-9cbb-8078db6ba4ce",
+                            "name": "Sturdy Kilts Fibre Co-op"
+                        }
+                    ]
+                },
+                "end": {
+                    "id": "c54279c4-3ac5-41e8-84fd-4d2c8a8e7dde",
+                    "name": "Dundee City",
+                    "type": [
+                        "pop",
+                        "exchange"
+                    ],
+                    "networkProviders": [
+                        {
+                            "id": "c0c64241-ce6c-445b-9cbb-8078db6ba4ce",
+                            "name": "Sturdy Kilts Fibre Co-op"
+                        }
+                    ]
+                },
+                "network": {
+                    "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
+                    "name": "Sturdy Kilts Internet4All"
+                }
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        -3.9332142227750353,
+                        56.12765572452193
+                    ],
+                    [
+                        -2.9991564590478674,
+                        56.46418572137415
+                    ]
+                ],
+                "type": "LineString"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "91d1915d-ed80-4ce6-963b-d5c3b3f911ac",
+                "start": {
+                    "id": "c54279c4-3ac5-41e8-84fd-4d2c8a8e7dde",
+                    "name": "Dundee City",
+                    "type": [
+                        "pop",
+                        "exchange"
+                    ],
+                    "networkProviders": [
+                        {
+                            "id": "c0c64241-ce6c-445b-9cbb-8078db6ba4ce",
+                            "name": "Sturdy Kilts Fibre Co-op"
+                        }
+                    ]
+                },
+                "end": {
+                    "id": "a3bdba70-8491-4299-82b8-f236999f7a8a",
+                    "name": "Aberdeen City",
+                    "type": [
+                        "pop",
+                        "exchange"
+                    ],
+                    "networkProviders": [
+                        {
+                            "id": "c0c64241-ce6c-445b-9cbb-8078db6ba4ce",
+                            "name": "Sturdy Kilts Fibre Co-op"
+                        }
+                    ]
+                },
+                "network": {
+                    "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
+                    "name": "Sturdy Kilts Internet4All"
+                }
+            },
+            "geometry": {
+                "coordinates": [
+                    [
+                        -2.9292180395376306,
+                        56.48551167033199
+                    ],
+                    [
+                        -2.106215966301363,
+                        57.139371487281124
+                    ]
+                ],
+                "type": "LineString"
+            }
+        }
+    ]
+}
