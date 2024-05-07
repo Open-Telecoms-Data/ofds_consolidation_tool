@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, List, Set, Tuple, Type
+from typing import Any, Dict, Generic, Iterable, List, Set, Tuple, Type
 
+import uuid
 import json
 import logging
 
@@ -34,11 +35,22 @@ class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
     def get_comparisons_to_ask_user(self) -> List[ComparisonT]: ...
 
     def _merge_features(self, primary: FeatureT, secondary: FeatureT) -> FeatureT:
-        # Update span id map
-        # Note that we only merge spans with the same start/end IDs
+        # Update ID map to keep track of which IDs have been reassigned
         self.network_b_ids_map[secondary.id] = primary.id
 
+        # TODO: Add provenance to properties, perhaps combine with existing info
+
         # Merge properties
+        props = self._merge_features_properties(primary, secondary)
+
+        # Create merged Feature
+        return self.FeatureCls(
+            primary.id, props, primary.featureId, primary.featureGeometry
+        )
+
+    def _merge_features_properties(
+        self, primary: Dict[str, Any], secondary: Dict[str, Any]
+    ) -> Dict[str, Any]:
         props = primary.properties.copy()
 
         def set_prop(k, v):
@@ -74,9 +86,7 @@ class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
                 strs = [feat.get(k) for feat in [primary, secondary] if feat.get(k)]
                 set_prop(k, ", ".join(strs))
 
-        return self.FeatureCls(
-            primary.id, props, primary.featureId, primary.featureGeometry
-        )
+        return props
 
 
 class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]):
@@ -94,8 +104,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
     match_radius_km: float
 
     user_comparisons: List[NodeComparison]
-
-    nodes: List[Tuple[Node, NodeComparisonOutcome]]
+    outcomes: List[NodeComparisonOutcome]
 
     # Lookup for Id's of nodes from Network B after consolidation
     network_b_ids_map: Dict[str, str]
@@ -137,7 +146,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         self.merge_threshold = merge_above
         self.ask_threshold = ask_above
         self.match_radius_km = match_radius_km
-        self.nodes = list()
+        self.outcomes = list()
         self.user_comparisons = []
         self.network_b_ids_map = dict()
 
@@ -152,26 +161,16 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
             for b_node in self.network_b.nodes:
                 comparison = NodeComparison(a_node, b_node)
                 if comparison.distance_km > self.match_radius_km:
-                    # No chance of match, just add them both individually
-                    self.nodes.append(
-                        (
-                            comparison.node_a,
-                            NodeComparisonOutcome(
-                                comparison=comparison,
-                                consolidate=False,
-                            ),
-                        )
-                    )
-                    self.nodes.append(
-                        (
-                            comparison.node_b,
+                    # No chance of match, just add immedate no-consolidate outcome
+                    self.add_comparison_outcomes(
+                        [
                             NodeComparisonOutcome(
                                 comparison=comparison, consolidate=False
-                            ),
-                        )
+                            )
+                        ]
                     )
 
-                elif comparison.confidence >= self.merge_threshold:
+                elif comparison.confidence > self.merge_threshold:
                     # Auto-consolidate
                     matching_properties = comparison.get_high_scoring_properties()
                     reason = ConsolidationReason(
@@ -185,9 +184,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
                     outcome = NodeComparisonOutcome(
                         comparison=comparison, consolidate=reason
                     )
-                    assert isinstance(reason.primary, Node)
-                    self.nodes.append((reason.primary, outcome))
-                    self.network_b_ids_map[comparison.node_b.id] = comparison.node_a.id
+                    self.add_comparison_outcomes([outcome])
 
                 elif comparison.confidence >= self.ask_threshold:
                     #   todo: get user pref for which network to keep
@@ -197,34 +194,77 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
     def get_comparisons_to_ask_user(self) -> List[NodeComparison]:
         return self.user_comparisons
 
-    def finalise_with_user_comparison_outcomes(
+    def add_comparison_outcomes(
         self,
-        user_comparison_outcomes: List[Tuple[NodeComparison, NodeComparisonOutcome]],
+        outcomes: Iterable[NodeComparisonOutcome],
     ):
+        self.outcomes.extend(outcomes)
+
+    def _gather_nodes_from_outcomes(self, outcomes: List[NodeComparisonOutcome]):
         """
-        This method should be called after the user has been asked about all manual
-        comparisons, and implements the results i.e. consolidating (or not) and adding
-        to the consolidated network.
+        This method implements the results of a comparison i.e. consolidating (or not)
+        and creates the consolidated network's Nodes.
         """
-        for comparison, outcome in user_comparison_outcomes:
-            # TODO: Add "provenance" property here
+
+        # Index of all nodes
+        nodes_a = {o.comparison.node_a.id: o.comparison.node_a for o in outcomes}
+        nodes_b = {o.comparison.node_b.id: o.comparison.node_b for o in outcomes}
+
+        # Index which nodes from A and B have been consolidated
+        consolidated_ids_a: Set[str] = set(
+            o.comparison.node_a.id
+            for o in outcomes
+            if isinstance(o.consolidate, ConsolidationReason)
+        )
+        consolidated_ids_b: Set[str] = set(
+            o.comparison.node_b.id
+            for o in outcomes
+            if isinstance(o.consolidate, ConsolidationReason)
+        )
+
+        # Index which nodes from A and B aren't consolidated, and can be directly output
+        unconsolidated_ids_a: Set[str] = set(nodes_a.keys()).difference(
+            consolidated_ids_a
+        )
+        unconsolidated_ids_b: Set[str] = set(nodes_b.keys()).difference(
+            consolidated_ids_b
+        )
+
+        # Output nodes
+        nodes: Dict[str, Node]
+        nodes = dict()
+
+        # Create + Gather consolidated nodes
+        for outcome in outcomes:
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Node)
                 assert isinstance(outcome.consolidate.secondary, Node)
-                self.nodes.append(
-                    (
-                        self._merge_features(
-                            outcome.consolidate.primary,
-                            outcome.consolidate.secondary,
-                        ),
-                        outcome,
-                    )
+                consolidated_node = self._merge_features(
+                    outcome.consolidate.primary,
+                    outcome.consolidate.secondary,
                 )
+                logger.info(f"Creating consolidated node: {consolidated_node.name}")
+                assert consolidated_node.id not in nodes
+                nodes[consolidated_node.id] = consolidated_node
 
+        # Gather unconsolidated nodes from A
+        for _id in unconsolidated_ids_a:
+            assert _id not in nodes
+            nodes[_id] = nodes_a[_id]
+
+        # Gather unconsolidated nodes from B, creating new IDs if there's a clash
+        for _id in unconsolidated_ids_b:
+            if _id in nodes:
+                # rewrite ID of node B
+                logger.info("Found Node in Network B with an existing ID, rewriting.")
+                new_node = nodes_b[_id].with_new_id(str(uuid.uuid4()))
+                assert new_node.id not in nodes
+                nodes[new_node.id] = new_node
             else:
-                # no match: keep both
-                self.nodes.append((comparison.node_a, outcome))
-                self.nodes.append((comparison.node_b, outcome))
+                assert _id not in nodes
+                nodes[_id] = nodes_b[_id]
+
+        return set(nodes.values())
 
     def _remap_network_b_span_node_ids(self, span: Span) -> Span:
         new_properties = span.properties.copy()
@@ -256,9 +296,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         return new_span
 
     def get_networks_with_consolidated_nodes(self) -> Tuple[Network, Network]:
-        qgs_layer, nodes = self._qgis_layer_from_nodes(
-            set([n for (n, o) in self.nodes])
-        )
+        nodes = list(self._gather_nodes_from_outcomes(self.outcomes))
+        qgs_layer, nodes = self._qgis_layer_from_nodes(nodes)
 
         # Network A IDs never change, so no remapping needed
         new_network_a = Network(
@@ -282,7 +321,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         return (new_network_a, new_network_b)
 
     def _qgis_layer_from_nodes(
-        self, nodes: Set[Node]
+        self, nodes: List[Node]
     ) -> Tuple[QgsVectorLayer, List[Node]]:
         LAYER_NAME = "_ofds_consolidated_nodes"
 
@@ -314,7 +353,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
         new_nodes: List[Node] = list()
 
-        # Create a new QgsFeature for each new Node, copying old Geometry + consolidated properties
+        # Create a new QgsFeature for each new Node, copying old Geometry
+        #  + consolidated properties
         #  + new Nodes because featureId changes w/ a new layer
         for node in nodes:
             new_feature = QgsFeature(fields)

@@ -1,6 +1,16 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict, Generic, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Generic,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 from qgis.core import QgsPointXY, QgsWkbTypes, QgsDistanceArea, QgsUnitTypes
 
 from .network import Feature, Node, Span
@@ -475,8 +485,8 @@ class ConsolidationReason:
     """
 
     feature_type: str
-    primary: Union[Node, Span]
-    secondary: Union[Node, Span]
+    primary: Feature
+    secondary: Feature
     confidence: float
     matching_properties: List[str]
     manual: bool = False
@@ -494,11 +504,18 @@ class ComparisonOutcome(Generic[ComparisonT]):
     consolidate: Union[Literal[False], ConsolidationReason]
 
 
-@dataclass(frozen=True)
-class NodeComparisonOutcome(ComparisonOutcome[NodeComparison]):
-    pass
+if TYPE_CHECKING:
+    NodeComparisonOutcome = ComparisonOutcome[NodeComparison]
+    SpanComparisonOutcome = ComparisonOutcome[SpanComparison]
+else:
+    NodeComparisonOutcome = ComparisonOutcome
+    SpanComparisonOutcome = ComparisonOutcome
 
-
-@dataclass(frozen=True)
-class SpanComparisonOutcome(ComparisonOutcome[SpanComparison]):
-    pass
+# @dataclass(frozen=True)
+# class NodeComparisonOutcome(ComparisonOutcome[NodeComparison]):
+#    pass
+#
+#
+# @dataclass(frozen=True)
+# class SpanComparisonOutcome(ComparisonOutcome[SpanComparison]):
+#    pass

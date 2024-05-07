@@ -110,11 +110,17 @@ class Feature:
 
     def __hash__(self) -> int:
         # Enable Nodes/Spans to be put in a Set or Dict
+        # TODO: also add Network id when we get that
         return hash((self.id, self.featureId, self.featureType))
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Feature):
-            return self.id == other.id
+            # TODO: also add Network id when we get that
+            return (
+                self.id == other.id
+                and self.featureId == other.featureId
+                and self.featureType == other.featureType
+            )
         else:
             raise ValueError("Can't compare Feature to non-Feature")
 
@@ -158,6 +164,17 @@ class Node(Feature):
             qgs_fields.append(field)
 
         return qgs_fields
+
+    def with_new_id(self, new_id: str):
+        # TODO: Update provenance somehow to reflect the ID change?
+        props = self.properties.copy()
+        props["id"] = new_id
+        return Node(
+            new_id,
+            properties=props,
+            featureId=self.featureId,
+            featureGeometry=self.featureGeometry,
+        )
 
     def _convert_properties(self, properties):
         return super()._convert_properties(properties)
@@ -233,6 +250,9 @@ class Node(Feature):
 
     def __str__(self):
         return f"<Node {self.name}>"
+
+    def __repr__(self):
+        return f"<Node name={self.name}>"
 
 
 class Span(Feature):
@@ -340,8 +360,10 @@ class Span(Feature):
         return end_obj["id"]
 
     def __str__(self):
-        name = self.properties["name"] if "name" in self.properties else self.id
-        return f"<Span {name}>"
+        return f"<Span {self.name}>"
+
+    def __repr__(self) -> str:
+        return f"<Span {self.name}>"
 
 
 FeatureT = TypeVar("FeatureT", Node, Span)

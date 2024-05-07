@@ -2,7 +2,7 @@
   "python.languageServer": "Default",
   "python.analysis.autoImportCompletions": true,
   "python.analysis.importFormat": "relative",
-  "python.analysis.typeCheckingMode": "off", /* Using mypy instead */
+  "python.analysis.typeCheckingMode": "standard", /* Using mypy instead */
   "python.analysis.diagnosticMode": "workspace",
   "python.analysis.autoFormatStrings": true,
   "[python]": {

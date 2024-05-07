@@ -1,5 +1,6 @@
+import logging
 from pathlib import Path
-from qgis.core import QgsVectorLayer, QgsApplication
+from qgis.core import QgsVectorLayer
 
 from tool.model.comparison import (
     ConsolidationReason,
@@ -8,7 +9,13 @@ from tool.model.comparison import (
 from tool.model.consolidation import NetworkNodesConsolidator
 from tool.model.network import Network
 
-# QgsApplication.setPrefixPath("/usr")  # for Linux
+# QgsApplication.setPrefixPath("/usr")  # for Linux?
+
+from .. import setup_logging
+
+logger = logging.getLogger(__name__)
+
+setup_logging()
 
 
 def test_nodes_consolidation(qgis_app, qgis_new_project, request):
@@ -20,7 +27,7 @@ def test_nodes_consolidation(qgis_app, qgis_new_project, request):
     b_nodes_uri = "GeoJSON:" + Path(test_data_dir, "nodes_b.geojson").as_posix()
     b_spans_uri = "GeoJSON:" + Path(test_data_dir, "spans_b.geojson").as_posix()
 
-    print(f"{a_nodes_uri=}")
+    logger.info(f"{a_nodes_uri=}")
 
     a_nodes_layer = QgsVectorLayer(a_nodes_uri, "a_nodes", "ogr")
     a_spans_layer = QgsVectorLayer(a_spans_uri, "a_spans", "ogr")
@@ -44,26 +51,25 @@ def test_nodes_consolidation(qgis_app, qgis_new_project, request):
 
     comparisons = nnc.get_comparisons_to_ask_user()
 
+    logger.info(f"{len(comparisons)=}")
+
     # Mock the user pressing Same on all comparisons
-    comparisons_outcomes = [
-        (
-            comparison,
-            NodeComparisonOutcome(
-                comparison=comparison,
-                consolidate=ConsolidationReason(
-                    feature_type="NODE",
-                    primary=comparison.feature_a,
-                    secondary=comparison.feature_b,
-                    confidence=comparison.confidence,
-                    matching_properties=comparison.get_high_scoring_properties(),
-                    manual=True,
-                ),
+    comparison_outcomes = [
+        NodeComparisonOutcome(
+            comparison=comparison,
+            consolidate=ConsolidationReason(
+                feature_type="NODE",
+                primary=comparison.feature_a,
+                secondary=comparison.feature_b,
+                confidence=comparison.confidence,
+                matching_properties=comparison.get_high_scoring_properties(),
+                manual=True,
             ),
         )
         for comparison in comparisons
     ]
 
-    nnc.finalise_with_user_comparison_outcomes(comparisons_outcomes)
+    nnc.add_comparison_outcomes(comparison_outcomes)
 
     (consolidated_net_a, consolidated_net_b) = (
         nnc.get_networks_with_consolidated_nodes()

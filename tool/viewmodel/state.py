@@ -259,21 +259,13 @@ class ToolNodeComparisonState(AbstractToolComparisonState[Node, NodeComparison])
                 # If they're not sure (clicked Cancel), let them continue comparing
                 return self
 
-            # If they're user, then set all unmarked comparisons to "don't consolidate"
-            for i in range(len(self.comparisons_outcomes)):
-                (comparison, outcome) = self.comparisons_outcomes[i]
-                if outcome is None:
-                    self.comparisons_outcomes[i] = (
-                        comparison,
-                        NodeComparisonOutcome(comparison=comparison, consolidate=False),
-                    )
-
-        self.consolidator.finalise_with_user_comparison_outcomes(
-            cast(
-                List[Tuple[NodeComparison, NodeComparisonOutcome]],
-                self.comparisons_outcomes,
-            )
+        # Gather outcomes, setting all all unmarked comparisons to "don't consolidate"
+        outcomes: List[NodeComparisonOutcome] = list(
+            o if o is not None else ComparisonOutcome(comparison=c, consolidate=False)
+            for (c, o) in self.comparisons_outcomes
         )
+
+        self.consolidator.add_comparison_outcomes(outcomes)
 
         (new_network_a, new_network_b) = (
             self.consolidator.get_networks_with_consolidated_nodes()
