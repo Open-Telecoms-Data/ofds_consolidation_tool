@@ -109,8 +109,7 @@ class ToolController:
         if isinstance(state, ToolNodeComparisonState) or isinstance(
             state, ToolSpanComparisonState
         ):
-            if state.setOutcomeConsolidate():
-                state.gotoNextComparison()
+            state.setOutcomeConsolidate()
             return state
 
         else:
@@ -121,7 +120,6 @@ class ToolController:
             state, ToolSpanComparisonState
         ):
             state.setOutcomeDontConsolidate()
-            state.gotoNextComparison()
             return state
 
         else:
