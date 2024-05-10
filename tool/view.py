@@ -22,6 +22,7 @@ from qgis.gui import QgsMapCanvas
 
 from .model.comparison import (
     ALL_NODE_PROPERTIES,
+    ALL_SPAN_PROPERTIES,
     ConsolidationReason,
     NodeComparison,
     SpanComparison,
@@ -234,18 +235,51 @@ class InfoPanelView:
         span_a = comparison.features[0]
         span_b = comparison.features[1]
 
+        hi_score_props = set(comparison.get_high_scoring_properties())
+        all_props = ALL_SPAN_PROPERTIES
+
+        hi_score_rows = [
+            (prop, span_a.get(prop), span_b.get(prop), comparison.scores.get(prop, 0))
+            for prop in hi_score_props
+        ]
+
+        all_score_rows = [
+            (prop, span_a.get(prop), span_b.get(prop), comparison.scores.get(prop, 0))
+            for prop in all_props
+        ]
+
         info_html = f"""
-        TODO
+        <h2>Overall Confidence: {int(comparison.confidence)}%</h2>
 
-        Span A:
-        <pre>
-        {json.dumps(span_a.properties, indent=2)}
-        </pre>
+        <h2>Similar Properties</h2>
 
-        Span B:
-        <pre>
-        {json.dumps(span_b.properties, indent=2)}
-        </pre>
+        <table>
+          <tr>
+            <th>Attribute</th>
+            <th>Value A</th>
+            <th>Value B</th>
+            <th>Score</th>
+          </tr>
+          {
+              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
+                      for k,va,vb,sc in hi_score_rows)
+          }
+        </table>
+
+        <h2>All Properties</h2>
+
+        <table>
+          <tr>
+            <th>Attribute</th>
+            <th>Value A</th>
+            <th>Value B</th>
+            <th>Score</th>
+          </tr>
+          {
+              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
+                      for k,va,vb,sc in all_score_rows)
+          }
+        </table>
         """
 
         return info_html
