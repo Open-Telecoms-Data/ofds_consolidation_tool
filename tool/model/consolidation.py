@@ -390,12 +390,7 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
 
     network_b_ids_map: Dict[str, str]
 
-    def __init__(self, network_a: Network, network_b: Network):
-        self.network_a = network_a
-        self.network_b = network_b
-        self.network_b_ids_map = dict()
-        self.matched_spans_in_a = set()
-        self.matched_spans_in_b = set()
+    comparison_outcomes: List[NodeComparisonOutcome]
 
     PROPS_TO_COPY = [
         "name",
@@ -428,6 +423,14 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
         "fibreTypeDetails/description",
     ]
 
+    def __init__(self, network_a: Network, network_b: Network):
+        self.network_a = network_a
+        self.network_b = network_b
+        self.network_b_ids_map = dict()
+        self.matched_spans_in_a = set()
+        self.matched_spans_in_b = set()
+        self.comparison_outcomes = list()
+
     def get_comparisons_to_ask_user(self) -> List[SpanComparison]:
         network_a_index: Dict[Tuple[str, str], Span]
         network_a_index = dict()
@@ -456,45 +459,85 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
 
         return matches
 
-    def get_consolidated_network_with_user_comparison_outcomes(
+    def _gather_spans_from_outcomes(self, outcomes: List[SpanComparisonOutcome]):
+        """
+        This method implements the results of a comparison i.e. consolidating (or not)
+        and creates the consolidated network's Spans.
+        """
+
+        # Index of all spans
+        spans_a = {s.id: s for s in self.network_a.spans}
+        spans_b = {s.id: s for s in self.network_b.spans}
+
+        # Index which nodes from A and B have been consolidated
+        consolidated_ids_a: Set[str] = set(
+            o.comparison.span_a.id
+            for o in outcomes
+            if isinstance(o.consolidate, ConsolidationReason)
+        )
+        consolidated_ids_b: Set[str] = set(
+            o.comparison.span_b.id
+            for o in outcomes
+            if isinstance(o.consolidate, ConsolidationReason)
+        )
+
+        # Index which nodes from A and B aren't consolidated, and can be directly output
+        unconsolidated_ids_a: Set[str] = set(spans_a.keys()).difference(
+            consolidated_ids_a
+        )
+
+        unconsolidated_ids_b: Set[str] = set(spans_b.keys()).difference(
+            consolidated_ids_b
+        )
+
+        # Output spans
+        spans: Dict[str, Span]
+        spans = dict()
+
+        # Create + Gather consolidated spans
+        for outcome in outcomes:
+            if isinstance(outcome.consolidate, ConsolidationReason):
+                assert isinstance(outcome.consolidate.primary, Span)
+                assert isinstance(outcome.consolidate.secondary, Span)
+                consolidated_span = self._merge_features(
+                    outcome.consolidate.primary,
+                    outcome.consolidate.secondary,
+                )
+                logger.info(f"Creating consolidated node: {consolidated_span.name}")
+                assert consolidated_span.id not in spans
+                spans[consolidated_span.id] = consolidated_span
+
+        # Gather unconsolidated nodes from A
+        for _id in unconsolidated_ids_a:
+            assert _id not in spans
+            spans[_id] = spans_a[_id]
+
+        # Gather unconsolidated nodes from B, creating new IDs if there's a clash
+        for _id in unconsolidated_ids_b:
+            if _id in spans:
+                # rewrite ID of node B
+                logger.info("Found Span in Network B with an existing ID, rewriting.")
+                new_node = spans_b[_id].with_new_id(str(uuid.uuid4()))
+                assert new_node.id not in spans
+                spans[new_node.id] = new_node
+            else:
+                assert _id not in spans
+                spans[_id] = spans_b[_id]
+
+        return set(spans.values())
+
+    def get_consolidated_network_from_outcomes(
         self,
-        user_comparison_outcomes: List[SpanComparisonOutcome],
+        outcomes: List[SpanComparisonOutcome],
     ) -> Network:
         """
         This method should be called after the user has been asked about all manual
         comparisons, and implements the results i.e. consolidating (or not) and adding
         to the consolidated network.
 
-        Returns the consolidated Network.https://github.com/Open-Telecoms-Data/ofds_consolidation_tool/tree/rg/spans-comparison-functionality
+        Returns the consolidated Network.
         """
-        spans: List[Span] = list()
-
-        # First add all non-matched (i.e. non-compared) Spans
-        for span_a in self.network_a.spans:
-            if span_a not in self.matched_spans_in_a:
-                spans.append(span_a)
-
-        for span_b in self.network_b.spans:
-            if span_b not in self.matched_spans_in_b:
-                spans.append(span_b)
-
-        # Then consolidate based on user comparison outcomes
-        for outcome in user_comparison_outcomes:
-            # TODO: Add provenance property to each Span
-            if isinstance(outcome.consolidate, ConsolidationReason):
-                assert isinstance(outcome.consolidate.primary, Span)
-                assert isinstance(outcome.consolidate.secondary, Span)
-                spans.append(
-                    self._merge_features(
-                        outcome.consolidate.primary,
-                        outcome.consolidate.secondary,
-                    )
-                )
-
-            else:
-                # no match: keep both
-                spans.append(outcome.comparison.span_a)
-                spans.append(outcome.comparison.span_b)
+        spans = list(self._gather_spans_from_outcomes(outcomes))
 
         spans_layer, new_spans = self._create_qgis_layer_from_spans(spans)
 

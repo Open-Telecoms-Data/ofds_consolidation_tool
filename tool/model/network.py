@@ -104,6 +104,17 @@ class Feature:
         """Human readable name"""
         return cast(str, self.properties.get("name", self.id))
 
+    def with_new_id(self, new_id: str):
+        # TODO: Update provenance somehow to reflect the ID change?
+        props = self.properties.copy()
+        props["id"] = new_id
+        return self.__class__(
+            new_id,
+            properties=props,
+            featureId=self.featureId,
+            featureGeometry=self.featureGeometry,
+        )
+
     def _convert_properties(self, properties):
         """Convert properties to their proper types. Node/Span specific."""
         return properties
@@ -164,17 +175,6 @@ class Node(Feature):
             qgs_fields.append(field)
 
         return qgs_fields
-
-    def with_new_id(self, new_id: str):
-        # TODO: Update provenance somehow to reflect the ID change?
-        props = self.properties.copy()
-        props["id"] = new_id
-        return Node(
-            new_id,
-            properties=props,
-            featureId=self.featureId,
-            featureGeometry=self.featureGeometry,
-        )
 
     def _convert_properties(self, properties):
         return super()._convert_properties(properties)

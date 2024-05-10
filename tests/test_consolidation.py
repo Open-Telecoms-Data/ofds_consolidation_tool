@@ -97,6 +97,7 @@ def test_consolidation(qgis_app, qgis_new_project, request):
     )
 
     span_comparisons = nsc.get_comparisons_to_ask_user()
+    assert len(span_comparisons) == 2
 
     # Simulate pressing Same on all comparisons
     span_comparison_outcomes = [
@@ -114,7 +115,7 @@ def test_consolidation(qgis_app, qgis_new_project, request):
         for sc in span_comparisons
     ]
 
-    consolidated_network = nsc.get_consolidated_network_with_user_comparison_outcomes(
+    consolidated_network = nsc.get_consolidated_network_from_outcomes(
         span_comparison_outcomes
     )
 

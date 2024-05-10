@@ -323,9 +323,7 @@ class ToolSpanComparisonState(AbstractToolComparisonState[Span, SpanComparison])
         ]
 
         return ToolOutputState(
-            network=self.consolidator.get_consolidated_network_with_user_comparison_outcomes(
-                outcomes
-            )
+            network=self.consolidator.get_consolidated_network_from_outcomes(outcomes)
         )
 
 
