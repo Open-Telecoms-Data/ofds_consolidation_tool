@@ -162,6 +162,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         Create NodeComparisons, and check for either auto-merging or give to the UI to
         ask the user.
         """
+        user_comparisons = list()
+
         for a_node in self.network_a.nodes:
             for b_node in self.network_b.nodes:
                 comparison = NodeComparison(a_node, b_node)
@@ -193,8 +195,9 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
                 elif comparison.confidence >= self.ask_threshold:
                     #   todo: get user pref for which network to keep
-                    #   todo: ability to merge rather than replace? (stretch goal)
-                    self.user_comparisons.append(comparison)
+                    user_comparisons.append(comparison)
+
+        self.user_comparisons = user_comparisons
 
     def get_comparisons_to_ask_user(self) -> List[NodeComparison]:
         return self.user_comparisons
