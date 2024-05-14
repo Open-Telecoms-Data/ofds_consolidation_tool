@@ -100,7 +100,7 @@ NOTE: We must only use *relative* imports for importing within this codebase, du
 Dev tools i.e. pytest are installed in a virtual environment, but we still need access to the global python environment to access QGIS's PyQGIS libraries. To do this, create the venv with additional access to system packages:
 
 ```bash
-/bin/python -m venv --system-site-packages --upgrade-deps .venv
+python -m venv --system-site-packages --upgrade-deps .venv
 ```
 
 or replace `/bin/python` with the path to your Python installation used by QGIS.
@@ -120,4 +120,19 @@ To update dev tools, edit `dev_requirements.in` with any changes needed, then us
 ```bash
 pip-compile requirements_dev.in
 python -m pip install --upgrade -r dev_requirements.txt
+```
+
+#### Running Tests
+
+Setup:
+
+```bash
+source .venv/bin/activate  # Activate your virtual environment
+python -m pip install -e . # Install the module as editable to make tests work
+```
+
+To run tests, run PyTest as normal:
+
+```bash
+pytest
 ```
