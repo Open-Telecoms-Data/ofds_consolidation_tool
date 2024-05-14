@@ -138,7 +138,7 @@ class NodeComparison(Comparison):
     total: float
     confidence: float
     scores: Dict[str, float]
-    weight: Dict[str, float]
+    weights: Dict[str, float]
 
     @property
     def node_a(self):
@@ -248,7 +248,7 @@ class NodeComparison(Comparison):
         return weights
 
     @classmethod
-    def _point_distance_km(self, point_a: QgsPointXY, point_b: QgsPointXY) -> float:
+    def _point_distance_km(cls, point_a: QgsPointXY, point_b: QgsPointXY) -> float:
         """Calculate the distance between two points, in kilometers."""
         calc = QgsDistanceArea()
         calc.setEllipsoid("WGS84")

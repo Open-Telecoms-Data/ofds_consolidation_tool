@@ -20,13 +20,18 @@ from .comparison import (
 logger = logging.getLogger(__name__)
 
 
+# TODO: sort by diagonal distance
 class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
 
     FeatureCls: Type[FeatureT]
 
     PROPS_TO_COPY: List[str]
+
+    # TODO: deduplicate array values
     PROPS_TO_MERGE_ARRAYS: List[str]
     PROPS_TO_SUM: List[str]
+
+    # TODO: if identical, don't concat
     PROPS_TO_CONCAT: List[str]
 
     network_b_ids_map: Dict[str, str]
@@ -49,7 +54,7 @@ class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
         )
 
     def _merge_features_properties(
-        self, primary: Dict[str, Any], secondary: Dict[str, Any]
+        self, primary: FeatureT, secondary: FeatureT
     ) -> Dict[str, Any]:
         props = primary.properties.copy()
 
@@ -341,7 +346,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         layer.setCustomProperty("skipMemoryLayersCheck", 1)
 
         layer_data = layer.dataProvider()
-        assert layer_data
+        assert layer_data  # type: ignore
 
         fields = Node.get_qgs_fields()
 

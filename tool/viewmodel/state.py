@@ -154,8 +154,8 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
 
         # Find all other comparisons containing one of the now-consolidated features,
         # and set them to "Not Same", because we can only consolidate a node once.
-        other_comparisons_with_span_a: List[Tuple[int, FeatureT]] = list()
-        other_comparisons_with_span_b: List[Tuple[int, FeatureT]] = list()
+        other_comparisons_with_feat_a: List[Tuple[int, FeatureT]] = list()
+        other_comparisons_with_feat_b: List[Tuple[int, FeatureT]] = list()
 
         for other_i in range(len(self.comparisons_outcomes)):
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
@@ -164,19 +164,19 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
                 continue
 
             if comparison.feature_a.id == other_comparison.feature_a.id:
-                other_comparisons_with_span_a.append(
-                    (other_i, other_comparison.feature_b)
+                other_comparisons_with_feat_a.append(
+                    (other_i, other_comparison.feature_b)  # type: ignore
                 )
 
             elif comparison.feature_b.id == other_comparison.feature_b.id:
-                other_comparisons_with_span_b.append(
-                    (other_i, other_comparison.feature_a)
+                other_comparisons_with_feat_b.append(
+                    (other_i, other_comparison.feature_a)  # type: ignore
                 )
 
         # Check that none of the other comparisons w/ overlapping nodes have already
         # been chosen to consolidate, if so display a warning to the user
 
-        for other_i, other_span in other_comparisons_with_span_a:
+        for other_i, other_span in other_comparisons_with_feat_a:
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
                 if not show_multi_consolidation_warning(
@@ -184,7 +184,7 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
                 ):
                     return False
 
-        for other_i, other_span in other_comparisons_with_span_b:
+        for other_i, other_span in other_comparisons_with_feat_b:
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
                 if not show_multi_consolidation_warning(
@@ -193,7 +193,8 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
                     return False
 
         # If we've got this far, update all the other comparisons to be "not same"
-        for other_i, _ in other_comparisons_with_span_a + other_comparisons_with_span_b:
+        for other_i, _ in other_comparisons_with_feat_a + other_comparisons_with_feat_b:
+            (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             self.comparisons_outcomes[other_i] = (
                 other_comparison,
                 self.ComparisonOutcomeCls(

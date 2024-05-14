@@ -366,7 +366,7 @@ class Span(Feature):
         return f"<Span {self.name}>"
 
 
-FeatureT = TypeVar("FeatureT", Node, Span)
+FeatureT = TypeVar("FeatureT", bound=Feature)
 
 
 class Network:
@@ -397,8 +397,8 @@ class Network:
         cls, nodesLayer: QgsVectorLayer, spansLayer: QgsVectorLayer
     ):
         # Load in all the nodes/spans from layer features
-        nodes = list(map(Node.from_qgis_feature, list(nodesLayer.getFeatures())))  # type: ignore
-        spans = list(map(Span.from_qgis_feature, list(spansLayer.getFeatures())))  # type: ignore
+        nodes = list(Node.from_qgis_feature(f) for f in list(nodesLayer.getFeatures()))
+        spans = list(Span.from_qgis_feature(f) for f in list(spansLayer.getFeatures()))
 
         return cls(
             nodes=nodes, nodesLayer=nodesLayer, spans=spans, spansLayer=spansLayer

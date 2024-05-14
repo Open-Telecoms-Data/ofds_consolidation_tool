@@ -1,13 +1,13 @@
-from typing import Literal, Union
+from typing import Literal
 
 from PyQt5.QtWidgets import QMessageBox
-from .model.network import Node, Span
+from .model.network import Feature, Node, Span
 
 
 def show_multi_consolidation_warning(
     a_or_b: Literal["A", "B"],
-    feature: Union[Node, Span],
-    other_feature: Union[Node, Span],
+    feature: Feature,
+    other_feature: Feature,
 ) -> bool:
     """
     This is a popup warning box shown to users when they try to consolidate a node/span
@@ -19,8 +19,10 @@ def show_multi_consolidation_warning(
     """
     if isinstance(feature, Node):
         kind = "Node"
-    else:
+    elif isinstance(feature, Span):
         kind = "Span"
+    else:
+        raise Exception(f"Unknown feature type {feature}")
 
     title = f"{kind} {a_or_b} {feature.name} already consolidated"
     info_text = (
@@ -66,7 +68,7 @@ def show_warningbox(
     msg.setWindowTitle(title)
     msg.setInformativeText(info_text)
     msg.setStandardButtons(
-        QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel  # type: ignore
     )
 
     def _btn_clicked(btn):
