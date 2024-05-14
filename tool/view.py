@@ -481,13 +481,21 @@ class ComparisonView:
         outcome = state.currentOutcome
         if outcome is None:
             self.sameButton.setEnabled(True)
+            self.sameButton.setStyleSheet("background-color: white;")
             self.notSameButton.setEnabled(True)
+            self.notSameButton.setStyleSheet("background-color: white;")
 
-        else:
-            self.sameButton.setEnabled(
-                not isinstance(outcome.consolidate, ConsolidationReason)
-            )
-            self.notSameButton.setEnabled(not (outcome.consolidate is False))
+        elif isinstance(outcome.consolidate, ConsolidationReason):
+            self.sameButton.setEnabled(False)
+            self.sameButton.setStyleSheet("background-color: yellow;")
+            self.notSameButton.setEnabled(True)
+            self.notSameButton.setStyleSheet("background-color: white;")
+
+        elif outcome.consolidate is False:
+            self.sameButton.setEnabled(True)
+            self.sameButton.setStyleSheet("background-color: white;")
+            self.notSameButton.setEnabled(False)
+            self.notSameButton.setStyleSheet("background-color: yellow;")
 
         self.nextButton.setEnabled(True)
         self.prevButton.setEnabled(True)
