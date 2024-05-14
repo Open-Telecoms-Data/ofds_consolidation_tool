@@ -1,6 +1,5 @@
 import logging
 from typing import List, Optional, Tuple, Union
-import json
 from dataclasses import dataclass
 from PyQt5.QtWidgets import (
     QTextEdit,
@@ -21,8 +20,6 @@ from qgis.core import (
 from qgis.gui import QgsMapCanvas
 
 from .model.comparison import (
-    ALL_NODE_PROPERTIES,
-    ALL_SPAN_PROPERTIES,
     ConsolidationReason,
     NodeComparison,
     SpanComparison,
@@ -45,6 +42,52 @@ logger = logging.getLogger(__name__)
 # Scale ratio of the displayed minimaps when showing Nodes
 # e.g. 1:25,000 would be 25000
 MINIMAP_SCALE_RATIO = 100000  # 1:100,000
+
+
+DISPLAY_NODE_PROPERTIES = [
+    "id",
+    "name",
+    "phase/name",
+    "physicalInfrastructureProvider/name",
+    "accessPoint",
+    "power",
+    "status",
+    "coordinates",
+    "location/address/streetAddress",
+    "location/address/locality",
+    "location/address/region",
+    "location/address/postalCode",
+    "location/address/country",
+    "type",
+    "internationalConnections/streetAddress",
+    "internationalConnections/region",
+    "internationalConnections/locality",
+    "internationalConnections/postalCode",
+    "internationalConnections/country",
+    "networkProviders",
+]
+
+
+DISPLAY_SPAN_PROPERTIES = [
+    "id",
+    "name",
+    "phase/name",
+    "readyForServiceDate",
+    "start/name",
+    "end/name",
+    "physicalInfrastructureProvider/name",
+    "coordinates",
+    "networkProviders",
+    "supplier",
+    "transmissionMedium",
+    "deployment",
+    "fibreType",
+    "fibreCount",
+    "fibreLength",
+    "capacity",
+    "countries",
+    "status",
+]
 
 
 class InvalidViewState(Exception):
@@ -179,7 +222,7 @@ class InfoPanelView:
         node_b = comparison.features[1]
 
         hi_score_props = set(comparison.get_high_scoring_properties())
-        all_props = ALL_NODE_PROPERTIES
+        all_props = DISPLAY_NODE_PROPERTIES
 
         hi_score_rows = [
             (prop, node_a.get(prop), node_b.get(prop), comparison.scores.get(prop, 0))
@@ -236,7 +279,7 @@ class InfoPanelView:
         span_b = comparison.features[1]
 
         hi_score_props = set(comparison.get_high_scoring_properties())
-        all_props = ALL_SPAN_PROPERTIES
+        all_props = DISPLAY_SPAN_PROPERTIES
 
         hi_score_rows = [
             (prop, span_a.get(prop), span_b.get(prop), comparison.scores.get(prop, 0))

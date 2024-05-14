@@ -20,50 +20,6 @@ from .._lib.jellyfish import _jellyfish as jellyfish
 logger = logging.getLogger(__name__)
 
 
-ALL_NODE_PROPERTIES = [
-    "name",
-    "phase/name",
-    "physicalInfrastructureProvider",
-    "accessPoint",
-    "power",
-    "status",
-    "coordinates",
-    "location/address/streetAddress",
-    "location/address/locality",
-    "location/address/region",
-    "location/address/postalCode",
-    "location/address/country",
-    "type",
-    "internationalConnections/streetAddress",
-    "internationalConnections/region",
-    "internationalConnections/locality",
-    "internationalConnections/postalCode",
-    "internationalConnections/country",
-    "networkProviders",
-]
-
-
-ALL_SPAN_PROPERTIES = [
-    "name",
-    "phase/name",
-    "readyForServiceDate",
-    "start",
-    "end",
-    "physicalInfrastructureProvider",
-    "coordinates",
-    "networkProviders",
-    "supplier",
-    "transmissionMedium",
-    "deployment",
-    "fibreType",
-    "fibreCount",
-    "fibreLength",
-    "capacity",
-    "countries",
-    "status",
-]
-
-
 class Comparison:
     """
     Generalised comparision class for things that are common between Node and
