@@ -444,7 +444,7 @@ class ConsolidationReason:
     primary: Feature
     secondary: Feature
     confidence: float
-    matching_properties: List[str]
+    similar_fields: List[str]
     manual: bool = False
 
 
