@@ -5,7 +5,7 @@ import uuid
 import json
 import logging
 
-from qgis.core import QgsVectorLayer, QgsProject, QgsFeature
+from .qgis import create_qgis_layer_from_nodes, create_qgis_layer_from_spans
 
 from .properties import (
     NODES_PROPERTIES_MERGE_CONFIG,
@@ -250,7 +250,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
     def get_networks_with_consolidated_nodes(self) -> Tuple[Network, Network]:
         nodes = list(self._gather_nodes_from_outcomes(self.outcomes))
-        qgs_layer, nodes = self._qgis_layer_from_nodes(nodes)
+        qgs_layer, nodes = create_qgis_layer_from_nodes(nodes)
 
         # Network A IDs never change, so no remapping needed
         new_network_a = Network(
@@ -272,63 +272,6 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         )
 
         return (new_network_a, new_network_b)
-
-    def _qgis_layer_from_nodes(
-        self, nodes: List[Node]
-    ) -> Tuple[QgsVectorLayer, List[Node]]:
-        LAYER_NAME = "_ofds_consolidated_nodes"
-
-        project = QgsProject.instance()
-        assert project
-
-        # Remove an old intermediate layers from previous tool uses
-        if len(project.mapLayersByName(LAYER_NAME)) > 0:
-            project.removeMapLayers(
-                [layer.id() for layer in project.mapLayersByName(LAYER_NAME)]
-            )
-
-        # Create the new QgsVectorLayer from consolidated Nodes
-        # TODO: Tidy up (i.e. remove) this layer after we're done?
-        layer_uri = "Point?crs=epsg:4326&index=yes"
-        layer = QgsVectorLayer(layer_uri, LAYER_NAME, "memory")
-        layer.setCustomProperty("skipMemoryLayersCheck", 1)
-
-        layer_data = layer.dataProvider()
-        assert layer_data  # type: ignore
-
-        fields = Node.get_qgs_fields()
-
-        layer.startEditing()
-        layer_data.addAttributes(fields.toList())
-        layer.commitChanges()
-
-        logger.debug(f"Adding {len(nodes)} Nodes to QgsVectorLayer")
-
-        new_nodes: List[Node] = list()
-
-        # Create a new QgsFeature for each new Node, copying old Geometry
-        #  + consolidated properties
-        #  + new Nodes because featureId changes w/ a new layer
-        for node in nodes:
-            new_feature = QgsFeature(fields)
-            new_feature.setGeometry(node.featureGeometry)
-            for field in fields:
-                if field.name() in node.properties:
-                    new_feature.setAttribute(
-                        field.name(), node.properties[field.name()]
-                    )
-            layer_data.addFeature(new_feature)
-            new_nodes.append(
-                Node(node.id, node.properties, new_feature.id(), new_feature.geometry())
-            )
-
-        layer.updateExtents()
-
-        # TODO: Change visibility from True to False when we're not testing anymore
-        #       or make it a setting?
-        project.addMapLayer(layer, True)
-
-        return (layer, new_nodes)
 
 
 class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]):
@@ -468,7 +411,7 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
         """
         spans = list(self._gather_spans_from_outcomes(outcomes))
 
-        spans_layer, new_spans = self._create_qgis_layer_from_spans(spans)
+        spans_layer, new_spans = create_qgis_layer_from_spans(spans)
 
         return Network(
             # at this point, nodes are the same for both networks
@@ -477,61 +420,6 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
             nodesLayer=self.network_a.nodesLayer,
             spansLayer=spans_layer,
         )
-
-    def _create_qgis_layer_from_spans(
-        self, spans: List[Span]
-    ) -> Tuple[QgsVectorLayer, List[Span]]:
-        LAYER_NAME = "_ofds_consolidated_spans"
-
-        project = QgsProject.instance()
-        assert project
-
-        # Remove an old intermediate layers from previous tool uses
-        if len(project.mapLayersByName(LAYER_NAME)) > 0:
-            project.removeMapLayers(
-                [layer.id() for layer in project.mapLayersByName(LAYER_NAME)]
-            )
-
-        # Create the new QgsVectorLayer from consolidated Spans
-        layer_uri = "LineString?crs=epsg:4326&index=yes"
-        layer = QgsVectorLayer(layer_uri, LAYER_NAME, "memory")
-        layer.setCustomProperty("skipMemoryLayersCheck", 1)
-
-        layer_data = layer.dataProvider()
-        assert layer_data  # type: ignore
-
-        fields = Span.get_qgs_fields()
-
-        layer.startEditing()
-        layer_data.addAttributes(fields.toList())
-        layer.commitChanges()
-
-        logger.debug(f"Adding {len(spans)} Spans to QgsVectorLayer")
-
-        new_spans: List[Span] = list()
-
-        # Create a new QgsFeature for each new Node, copying old Geometry +
-        # consolidated properties + new Nodes because featureId changes w/ a new layer
-        for span in spans:
-            new_feature = QgsFeature(fields)
-            new_feature.setGeometry(span.featureGeometry)
-            for field in fields:
-                if field.name() in span.properties:
-                    new_feature.setAttribute(
-                        field.name(), span.properties[field.name()]
-                    )
-            layer_data.addFeature(new_feature)
-            new_spans.append(
-                Span(span.id, span.properties, new_feature.id(), new_feature.geometry())
-            )
-
-        layer.updateExtents()
-
-        # TODO: Change visibility from True to False when we're not testing anymore
-        #       or make it a setting?
-        project.addMapLayer(layer, True)
-
-        return (layer, new_spans)
 
     def _remap_network_b_span_node_ids(self, span: Span) -> Span:
         new_properties = span.properties.copy()
