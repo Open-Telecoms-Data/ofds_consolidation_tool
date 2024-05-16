@@ -117,13 +117,13 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
                 elif comparison.confidence > self.merge_threshold:
                     # Auto-consolidate
-                    matching_properties = comparison.get_high_scoring_properties()
+                    similar_fields = comparison.get_high_scoring_properties()
                     reason = ConsolidationReason(
                         feature_type="NODE",
                         primary=comparison.node_a,
                         secondary=comparison.node_b,
                         confidence=comparison.confidence,
-                        matching_properties=matching_properties,
+                        similar_fields=similar_fields,
                         manual=False,
                     )
                     outcome = NodeComparisonOutcome(

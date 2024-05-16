@@ -209,7 +209,7 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
             secondary=comparison.feature_b,
             confidence=comparison.confidence,
             # TODO: user's choice of matching properties? User text message?
-            matching_properties=comparison.get_high_scoring_properties(),
+            similar_fields=comparison.get_high_scoring_properties(),
             manual=True,
         )
 
