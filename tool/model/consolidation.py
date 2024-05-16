@@ -12,6 +12,7 @@ from .properties import (
     SPANS_PROPERTIES_MERGE_CONFIG,
     PropMergeOp,
     merge_features_properties,
+    generate_provenance_data,
 )
 
 from .network import Node, Network, Span, FeatureT, Feature
@@ -39,14 +40,15 @@ class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
     @abstractmethod
     def get_comparisons_to_ask_user(self) -> List[ComparisonT]: ...
 
-    def _merge_features(self, primary: Feature, secondary: Feature) -> Feature:
+    def _merge_features(self, primary: Feature, secondary: Feature, provenance: Dict) -> Feature:
         # Update ID map to keep track of which IDs have been reassigned
         self.network_b_ids_map[secondary.id] = primary.id
 
-        # TODO: Add provenance to properties, perhaps combine with existing info
-
         # Merge properties
         props = merge_features_properties(self.PROPS_MERGE_CONFIG, primary, secondary)
+
+        # Add provenance data
+        props["provenance"] = provenance
 
         # Create merged Feature
         return self.FeatureCls(
@@ -180,14 +182,18 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         nodes: Dict[str, Node]
         nodes = dict()
 
-        # Create + Gather consolidated nodes
+        # Create and gather consolidated nodes
         for outcome in outcomes:
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Node)
                 assert isinstance(outcome.consolidate.secondary, Node)
+
+                provenance_data = generate_provenance_data(outcome.consolidate)
+
                 consolidated_node = self._merge_features(
                     outcome.consolidate.primary,
                     outcome.consolidate.secondary,
+                    provenance_data
                 )
                 logger.info(f"Creating consolidated node: {consolidated_node.name}")
                 assert consolidated_node.id not in nodes
@@ -416,9 +422,13 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Span)
                 assert isinstance(outcome.consolidate.secondary, Span)
+                
+                provenance_data = generate_provenance_data(outcome.consolidate)
+
                 consolidated_span = self._merge_features(
                     outcome.consolidate.primary,
                     outcome.consolidate.secondary,
+                    provenance_data
                 )
                 logger.info(f"Creating consolidated node: {consolidated_span.name}")
                 assert consolidated_span.id not in spans

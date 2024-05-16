@@ -1,4 +1,5 @@
 import logging
+import datetime
 
 from pprint import pprint
 from typing import Dict, Any, List, Tuple
@@ -131,3 +132,22 @@ def merge_features_properties(
     pprint(props)
 
     return props
+
+
+def generate_provenance_data(consolidation_reason):
+    """
+    Additional metadata about the origin of a consolidated feature.
+    Property names are in line with PROV-O vocab where applicable, and
+    use camelCase to serialise directly to JSON.
+    """
+    primary_id = consolidation_reason.primary.get("id")
+    secondary_id = consolidation_reason.secondary.get("id")
+    prov = {
+        "wasDerivedFrom": [primary_id, secondary_id], # TODO: include filenames here
+        "generatedAtTime": datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat(),
+        "confidence": consolidation_reason.confidence,
+        "similarFields": consolidation_reason.similar_fields,
+        "manual": consolidation_reason.manual,
+    }
+
+    return prov
