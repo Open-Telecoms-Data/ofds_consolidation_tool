@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import json
 
 from enum import Enum
@@ -38,7 +39,7 @@ class FeatureType(str, Enum):
     SPAN = "SPAN"
 
 
-class Feature:
+class Feature(ABC):
     """
     A Node or Span.
     Wrapper around an OFDS-compliant QgsFeature.
@@ -49,6 +50,9 @@ class Feature:
     featureGeometry: QgsGeometry
     id: str  # id is the OFDS id
     properties: Dict[str, Any]
+
+    @abstractmethod
+    def get(self, k: str) -> Any: ...
 
     @classmethod
     def from_qgis_feature(cls, feature: QgsFeature):

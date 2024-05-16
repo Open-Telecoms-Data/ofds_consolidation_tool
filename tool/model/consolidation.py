@@ -7,7 +7,14 @@ import logging
 
 from qgis.core import QgsVectorLayer, QgsProject, QgsFeature
 
-from .network import Node, Network, Span, FeatureT
+from .properties import (
+    NODES_PROPERTIES_MERGE_CONFIG,
+    SPANS_PROPERTIES_MERGE_CONFIG,
+    PropMergeOp,
+    merge_features_properties,
+)
+
+from .network import Node, Network, Span, FeatureT, Feature
 from .comparison import (
     NodeComparison,
     NodeComparisonOutcome,
@@ -23,75 +30,28 @@ logger = logging.getLogger(__name__)
 # TODO: sort by diagonal distance
 class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
 
-    FeatureCls: Type[FeatureT]
+    FeatureCls: Type[Feature]
 
-    PROPS_TO_COPY: List[str]
-
-    # TODO: deduplicate array values
-    PROPS_TO_MERGE_ARRAYS: List[str]
-    PROPS_TO_SUM: List[str]
-
-    # TODO: if identical, don't concat
-    PROPS_TO_CONCAT: List[str]
+    PROPS_MERGE_CONFIG: List[Tuple[str, PropMergeOp]]
 
     network_b_ids_map: Dict[str, str]
 
     @abstractmethod
     def get_comparisons_to_ask_user(self) -> List[ComparisonT]: ...
 
-    def _merge_features(self, primary: FeatureT, secondary: FeatureT) -> FeatureT:
+    def _merge_features(self, primary: Feature, secondary: Feature) -> Feature:
         # Update ID map to keep track of which IDs have been reassigned
         self.network_b_ids_map[secondary.id] = primary.id
 
         # TODO: Add provenance to properties, perhaps combine with existing info
 
         # Merge properties
-        props = self._merge_features_properties(primary, secondary)
+        props = merge_features_properties(self.PROPS_MERGE_CONFIG, primary, secondary)
 
         # Create merged Feature
         return self.FeatureCls(
             primary.id, props, primary.featureId, primary.featureGeometry
         )
-
-    def _merge_features_properties(
-        self, primary: FeatureT, secondary: FeatureT
-    ) -> Dict[str, Any]:
-        props = primary.properties.copy()
-
-        def set_prop(k, v):
-            # Support nested propes too via slash notation
-            if "/" in k:
-                k_parts = k.split("/")
-                props[k_parts[0]] = props.get(k_parts[0]) or {}
-                props[k_parts[0]][k_parts[1]] = v
-            else:
-                props[k] = v
-
-        # Copy over properties that exist in B but not A
-        for k in self.PROPS_TO_COPY:
-            if primary.get(k) is None:
-                if secondary.get(k) is not None:
-                    set_prop(k, secondary.get(k))
-
-        # Merge array properties
-        for k in self.PROPS_TO_MERGE_ARRAYS:
-            if primary.get(k) is not None or secondary.get(k) is not None:
-                prop_a = primary.get(k) or list()
-                prop_b = secondary.get(k) or list()
-                set_prop(k, list(prop_a) + list(prop_b))
-
-        # Sum properties
-        for k in self.PROPS_TO_SUM:
-            if primary.get(k) is not None and secondary.get(k) is not None:
-                set_prop(k, (primary.get(k) or 0) + (secondary.get(k) or 0))
-
-        # Concat (with a comma) string properties
-        for k in self.PROPS_TO_CONCAT:
-            if primary.get(k) is not None and secondary.get(k) is not None:
-                strs = [feat.get(k) for feat in [primary, secondary] if feat.get(k)]
-                set_prop(k, ", ".join(strs))
-
-        return props
 
 
 class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]):
@@ -100,6 +60,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
     """
 
     FeatureCls = Node
+
+    PROPS_MERGE_CONFIG = NODES_PROPERTIES_MERGE_CONFIG
 
     network_a: Network
     network_b: Network
@@ -113,30 +75,6 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
     # Lookup for Id's of nodes from Network B after consolidation
     network_b_ids_map: Dict[str, str]
-
-    # When consolidating nodes, these properties should be copied from secondary to
-    # primary if they don't exist on the primary.
-    PROPS_TO_COPY = [
-        "name",
-        "location",
-        "address",
-        "type",
-        "accessPoint",
-        "power",
-        "physicalInfrastructureProvider",
-    ]
-
-    # When consolidating nodes, these properties are arrays that should be concatenated.
-    PROPS_TO_MERGE_ARRAYS = [
-        "type",
-        "internationalConnections",
-        "technologies",
-        "networkProviders",
-    ]
-
-    # TODO: Figure out which properties to sum/concat in Nodes
-    PROPS_TO_SUM = []
-    PROPS_TO_CONCAT = []
 
     def __init__(
         self,
@@ -390,6 +328,8 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
 
     FeatureCls = Span
 
+    PROPS_MERGE_CONFIG = SPANS_PROPERTIES_MERGE_CONFIG
+
     network_a: Network
     network_b: Network
 
@@ -399,37 +339,6 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
     network_b_ids_map: Dict[str, str]
 
     comparison_outcomes: List[NodeComparisonOutcome]
-
-    PROPS_TO_COPY = [
-        "name",
-        "phase",
-        "status",
-        "readyForServiceDate",
-        "physicalInfrastructureProvider",
-        "supplier",
-        "deploymentDetails",
-        "darkFibre",
-        "fibreType",
-        "fibreTypeDetails/fibreSubType",
-        "fibreCount",
-        "capacityDetails",
-    ]
-
-    PROPS_TO_MERGE_ARRAYS = [
-        "transmissionMedium",
-        "deployment",
-        "countries",
-    ]
-
-    PROPS_TO_SUM = [
-        "capacity",
-    ]
-
-    PROPS_TO_CONCAT = [
-        "deploymentDetails/description",
-        "capacityDetails/description",
-        "fibreTypeDetails/description",
-    ]
 
     def __init__(self, network_a: Network, network_b: Network):
         self.network_a = network_a

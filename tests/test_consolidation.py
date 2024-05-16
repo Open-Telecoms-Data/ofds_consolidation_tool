@@ -120,9 +120,33 @@ def test_consolidation(qgis_app, qgis_new_project, request):
     )
 
     # Numbers based on test data layers
+
     # Check that nodes haven't changed
     assert len(consolidated_network.nodes) == 5
     assert len(list(consolidated_network.nodesLayer.getFeatures())) == 5
+
     # Check for the expected number of Spans
     assert len(consolidated_network.spans) == 4
     assert len(list(consolidated_network.spansLayer.getFeatures())) == 4
+
+    # Check that merged nodes & spans have multiple networkProviders
+    assert (
+        len(
+            [
+                n
+                for n in consolidated_network.nodes
+                if len(n.properties["networkProviders"]) > 1
+            ]
+        )
+        == 3
+    )
+    assert (
+        len(
+            [
+                s
+                for s in consolidated_network.spans
+                if len(s.properties["networkProviders"]) > 1
+            ]
+        )
+        == 2
+    )
