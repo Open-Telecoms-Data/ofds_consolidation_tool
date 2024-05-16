@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, Iterable, List, Set, Tuple, Type
+from typing import Dict, Generic, Iterable, List, Set, Tuple, Type
 
 import uuid
 import json
@@ -197,6 +197,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
                 )
                 logger.info(f"Creating consolidated node: {consolidated_node.name}")
                 assert consolidated_node.id not in nodes
+                assert isinstance(consolidated_node, Node)
                 nodes[consolidated_node.id] = consolidated_node
 
         # Gather unconsolidated nodes from A
@@ -432,6 +433,7 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
                 )
                 logger.info(f"Creating consolidated node: {consolidated_span.name}")
                 assert consolidated_span.id not in spans
+                assert isinstance(consolidated_span, Span)
                 spans[consolidated_span.id] = consolidated_span
 
         # Gather unconsolidated nodes from A
@@ -496,7 +498,7 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
         layer.setCustomProperty("skipMemoryLayersCheck", 1)
 
         layer_data = layer.dataProvider()
-        assert layer_data
+        assert layer_data  # type: ignore
 
         fields = Span.get_qgs_fields()
 
@@ -508,8 +510,8 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
 
         new_spans: List[Span] = list()
 
-        # Create a new QgsFeature for each new Node, copying old Geometry + consolidated properties
-        #  + new Nodes because featureId changes w/ a new layer
+        # Create a new QgsFeature for each new Node, copying old Geometry +
+        # consolidated properties + new Nodes because featureId changes w/ a new layer
         for span in spans:
             new_feature = QgsFeature(fields)
             new_feature.setGeometry(span.featureGeometry)
