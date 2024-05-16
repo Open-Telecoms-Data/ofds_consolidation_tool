@@ -129,8 +129,6 @@ def merge_features_properties(
         else:
             raise Exception(f"Unknown PropMergeOp {op}")
 
-    pprint(props)
-
     return props
 
 

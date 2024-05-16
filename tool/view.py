@@ -27,7 +27,7 @@ from .model.comparison import (
 from ..gui import Ui_OFDSDedupToolDialog
 
 from ..helpers import EPSG3857, getOpenStreetMapLayer
-from .model.network import FeatureType
+from .model.network import FeatureType, Network
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -350,6 +350,42 @@ class InfoPanelView:
             raise InvalidViewState
 
 
+class OutputInfoPanelView:
+    infoPanel: QTextEdit
+
+    def __init__(self, infoPanel: QTextEdit):
+        self.infoPanel = infoPanel
+
+    def render_output_html(self) -> str:
+        """
+        Returns HTML to display in the info panel when consolidation is finished.
+        """
+
+       
+        # Display Node info
+        info_html = f"""
+        <h2>Hello world</h2>
+        """
+
+        return info_html
+
+
+    def update(self, network: Union[Network, None]):
+        """
+        Display the given Network, or nothing.
+        """
+        if network is None:
+            # No feature to display, e.g. still selecting layers
+            self.infoPanel.setHtml("<p>Nothing to see here</p>")
+            self.infoPanel.setEnabled(False)
+            return
+
+        # Display feature info
+
+        self.infoPanel.setEnabled(True)
+        self.infoPanel.setHtml(self.render_output_html())
+
+
 #
 # Section-level views
 #
@@ -546,11 +582,13 @@ class ComparisonView:
 
 class OutputView:
     minimapview: MiniMapView
+    infopanelview: OutputInfoPanelView
 
     # TODO: Add style!
-    def __init__(self, project: QgsProject, mapCanvas: QgsMapCanvas):
+    def __init__(self, project: QgsProject, mapCanvas: QgsMapCanvas, infoPanel: QTextEdit):
         osmLayer = getOpenStreetMapLayer(project)
         self.minimapview = MiniMapView(mapCanvas=mapCanvas, backgroundLayer=osmLayer)
+        self.infopanelview = OutputInfoPanelView(infoPanel=infoPanel)
 
     def update(self, state: Optional[ToolState]):
         if isinstance(state, ToolOutputState):
@@ -562,8 +600,10 @@ class OutputView:
                     featureType=None,
                 )
             )
+            self.infopanelview.update(state.output_network)
         else:
             self.minimapview.update(None)
+            self.infopanelview.update(None)
 
 
 #
@@ -614,7 +654,7 @@ class ToolView:
             finishButton=ui.spansFinishedButton,
         )
 
-        self.outputView = OutputView(project=project, mapCanvas=ui.outputMapCanvas)
+        self.outputView = OutputView(project=project, mapCanvas=ui.outputMapCanvas, infoPanel=ui.outputInfoPanel)
 
         self.tabWidget = ui.tabWidget
 

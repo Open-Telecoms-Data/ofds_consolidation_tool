@@ -502,7 +502,7 @@
          <x>10</x>
          <y>10</y>
          <width>911</width>
-         <height>751</height>
+         <height>421</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -516,6 +516,16 @@
          <width>0</width>
          <height>300</height>
         </size>
+       </property>
+      </widget>
+      <widget class="QTextEdit" name="outputInfoPanel">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>440</y>
+         <width>901</width>
+         <height>361</height>
+        </rect>
        </property>
       </widget>
      </widget>
@@ -532,5 +542,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>outputFinishedButton</sender>
+   <signal>clicked()</signal>
+   <receiver>OFDSDedupToolDialog</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>452</x>
+     <y>878</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>473</x>
+     <y>482</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

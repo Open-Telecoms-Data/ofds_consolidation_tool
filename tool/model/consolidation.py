@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, Iterable, List, Set, Tuple, Type
+from pprint import pprint
 
 import uuid
 import json
@@ -49,6 +50,8 @@ class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
 
         # Add provenance data
         props["provenance"] = provenance
+
+        # pprint(props)
 
         # Create merged Feature
         return self.FeatureCls(
