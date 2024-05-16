@@ -74,7 +74,7 @@ def test_consolidation(qgis_app, qgis_new_project, request):
                 primary=comparison.feature_a,
                 secondary=comparison.feature_b,
                 confidence=comparison.confidence,
-                matching_properties=comparison.get_high_scoring_properties(),
+                similar_fields=comparison.get_high_scoring_properties(),
                 manual=True,
             ),
         )
@@ -108,7 +108,7 @@ def test_consolidation(qgis_app, qgis_new_project, request):
                 primary=sc.feature_a,
                 secondary=sc.feature_b,
                 confidence=sc.confidence,
-                matching_properties=sc.get_high_scoring_properties(),
+                similar_fields=sc.get_high_scoring_properties(),
                 manual=True,
             ),
         )
