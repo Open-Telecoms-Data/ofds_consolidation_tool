@@ -143,7 +143,7 @@ If you choose "Basic", each feature will have an additional `provenance` field:
 * `generatedAtTime`: date or datetime the network was generated.
 * `confidence`: a score between 0 and 1 representing how likely the two source features are the same.
 * `similarFields`: array of field names for fields with high similarity scores between the two features.
-* `automatic`: bool; false means the merge was confirmed manually by the user; true means it was done by the tool.
+* `manual`: bool; true means the merge was confirmed manually by the user; false means it was done by the tool.
 
 ```
 {
@@ -167,10 +167,10 @@ If you choose "Basic", each feature will have an additional `provenance` field:
 			},
 			"provenance": {
 				"wasDerivedFrom": ["f787b3ce-dc40-4d09-ac8a-78ded5811578", "debba101-49e9-4454-a613-f474dcc73f1c"],
-				"generatedAtTime": "2024-04-04",
+				"generatedAtTime": "2024-04-04T14:34:56+00:00",
 				"confidence": 0.89,
 				"similarFields": ["name", "coordinates", "status"],
-				"automatic": "false"
+				"manual": "true"
 			}
 		},
 		{
@@ -188,7 +188,7 @@ _And_ the whole network will contain a copy of the source of both original netwo
 
 * `allFieldScores`: an object where the properties are the field names used for comparision, and the values are the similarity scores between 0 and 1 for each.
 * `merged`: bool; false means the features were not consolidated together; true means they were.
-* `automatic`: the same as this property on individual features in a consolidated network, but note that if `automatic` is `true` and `merged` is `false` it means the tool automatically did not consolidate two features without prompting the user to confirm.
+* `manual`: the same as this property on individual features in a consolidated network, but note that if `manual` is `false` and `merged` is `false` it means the tool automatically did not consolidate two features without prompting the user to confirm.
 
 If "include non-matches" is set, the source and scores of both original networks for all features which were _compared_ are included, even if they were not consolidated:
 
@@ -217,7 +217,7 @@ If "include non-matches" is set, the source and scores of both original networks
 				"generatedAtTime": "2024-04-04",
 				"confidence": 0.89,
 				"similarFieldScores": {"name": 1, "coordinates": 0.8, "status": 1},
-				"automatic": "false"
+				"manual": "true"
 			}
 		},
 		{
@@ -263,7 +263,7 @@ If "include non-matches" is set, the source and scores of both original networks
 		"confidence": 0.29,
 		"allFieldScores": {"name": 0.1, "coordinates": 0.4, "status": 1, "type": 0, "power": 0},
 		"merged": "false",
-		"automatic": "true"
+		"manual": "false"
 	]
 }
 ```
