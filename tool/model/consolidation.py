@@ -5,7 +5,10 @@ import uuid
 import json
 import logging
 
-from .qgis import create_qgis_layer_from_nodes, create_qgis_layer_from_spans
+from .qgis import (
+    create_qgis_geojson_layer_from_nodes,
+    create_qgis_geojson_layer_from_spans,
+)
 
 from .properties import (
     NODES_PROPERTIES_MERGE_CONFIG,
@@ -250,7 +253,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
     def get_networks_with_consolidated_nodes(self) -> Tuple[Network, Network]:
         nodes = list(self._gather_nodes_from_outcomes(self.outcomes))
-        qgs_layer, nodes = create_qgis_layer_from_nodes(nodes)
+        qgs_layer, nodes = create_qgis_geojson_layer_from_nodes(nodes)
 
         # Network A IDs never change, so no remapping needed
         new_network_a = Network(
@@ -411,7 +414,7 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
         """
         spans = list(self._gather_spans_from_outcomes(outcomes))
 
-        spans_layer, new_spans = create_qgis_layer_from_spans(spans)
+        spans_layer, new_spans = create_qgis_geojson_layer_from_spans(spans)
 
         return Network(
             # at this point, nodes are the same for both networks
