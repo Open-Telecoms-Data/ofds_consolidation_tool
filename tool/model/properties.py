@@ -95,6 +95,9 @@ def merge_features_properties(
         prop_a = get_prop(primary.properties, k)
         prop_b = get_prop(secondary.properties, k)
 
+        if not prop_a and not prop_b:
+            continue
+
         # Copy over properties that exist in B but not A
         if op == PropMergeOp.KEEP_OR_COPY:
             if prop_a:
@@ -129,7 +132,8 @@ def merge_features_properties(
         else:
             raise Exception(f"Unknown PropMergeOp {op}")
 
-    pprint(props)
+    if "networkProviders" not in props:
+        pprint(props)
 
     return props
 

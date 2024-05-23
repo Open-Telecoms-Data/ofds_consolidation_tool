@@ -1,7 +1,9 @@
-from abc import ABC, abstractmethod
 import json
+import logging
 
+from abc import ABC, abstractmethod
 from enum import Enum
+from pprint import pprint
 from typing import Any, Dict, List, TypeVar, cast
 
 from PyQt5.QtCore import QVariant
@@ -15,6 +17,8 @@ from qgis.core import (
     QgsFields,
     QgsGeometry,
 )
+
+logger = logging.getLogger(__name__)
 
 
 NESTED_PROPERTIES = [
@@ -60,13 +64,19 @@ class Feature(ABC):
 
         # Check if nested objects have been loaded by QGIS, and load them if not.
         properties = {}
-        for attribute in attributes.keys():
-            if attribute in NESTED_PROPERTIES and isinstance(
-                attributes.get(attribute), str
-            ):
-                properties[attribute] = json.loads(attributes.get(attribute))
+        for attribute, value in attributes.items():
+            if isinstance(value, QVariant):
+                if value.isNull():
+                    continue
+                else:
+                    logger.warning(
+                        f"Dropping non-null QVariant attribute: {cls.__name__} {attributes.get('name', attributes.get('id'))} {attribute} : {value.typeName()} = {value}"
+                    )
+
+            if attribute in NESTED_PROPERTIES and isinstance(value, str):
+                properties[attribute] = json.loads(value)
             else:
-                properties[attribute] = attributes.get(attribute)
+                properties[attribute] = value
 
         if "id" not in properties or not isinstance(properties["id"], str):
             raise OFDSInvalidFeature

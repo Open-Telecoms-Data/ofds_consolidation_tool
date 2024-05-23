@@ -36,7 +36,13 @@
                 "network": {
                     "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
                     "name": "Sturdy Kilts Internet4All"
-                }
+                },
+                "networkProviders": [
+                    {
+                        "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
+                        "name": "Sturdy Kilts Internet4All"
+                    }
+                ]
             },
             "geometry": {
                 "coordinates": [
@@ -87,7 +93,13 @@
                 "network": {
                     "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
                     "name": "Sturdy Kilts Internet4All"
-                }
+                },
+                "networkProviders": [
+                    {
+                        "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
+                        "name": "Sturdy Kilts Internet4All"
+                    }
+                ]
             },
             "geometry": {
                 "coordinates": [
@@ -138,7 +150,13 @@
                 "network": {
                     "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
                     "name": "Sturdy Kilts Internet4All"
-                }
+                },
+                "networkProviders": [
+                    {
+                        "id": "21be8e29-5a42-4c66-a4cd-0b3693160aba",
+                        "name": "Sturdy Kilts Internet4All"
+                    }
+                ]
             },
             "geometry": {
                 "coordinates": [

@@ -138,3 +138,15 @@ class ToolController:
 
         else:
             raise ControllerInvalidState
+
+    def onSaveNodesButton(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolOutputState):
+            return state.saveNodes()
+        else:
+            raise ControllerInvalidState
+
+    def onSaveSpansButton(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolOutputState):
+            return state.saveSpans()
+        else:
+            raise ControllerInvalidState

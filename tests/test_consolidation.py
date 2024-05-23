@@ -1,4 +1,6 @@
 import logging
+
+from tempfile import TemporaryDirectory
 from pathlib import Path
 from typing import Tuple
 from qgis.core import QgsVectorLayer
@@ -10,6 +12,7 @@ from tool.model.comparison import (
 )
 from tool.model.consolidation import NetworkNodesConsolidator, NetworkSpansConsolidator
 from tool.model.network import Network
+from ..tool.model.qgis import write_geojson_from_features
 
 # QgsApplication.setPrefixPath("/usr")  # for Linux?
 
@@ -150,3 +153,16 @@ def test_consolidation(qgis_app, qgis_new_project, request):
         )
         == 2
     )
+
+    with TemporaryDirectory() as td:
+        nodes_geojson = Path(td, "nodes.geojson")
+        spans_geojson = Path(td, "spans.geojson")
+
+        with nodes_geojson.open("w") as f:
+            write_geojson_from_features(f, consolidated_network.nodes)
+
+        with spans_geojson.open("w") as f:
+            write_geojson_from_features(f, consolidated_network.spans)
+
+        assert nodes_geojson.stat().st_size > 100
+        assert spans_geojson.stat().st_size > 100
