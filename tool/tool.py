@@ -58,6 +58,9 @@ class OFDSDedupToolDialog(QDialog):
         self.ui.spansPrevButton.clicked.connect(self.onPrevSpansButtonClicked)
         self.ui.spansFinishedButton.clicked.connect(self.onFinishedSpansButtonClicked)
 
+        self.ui.outputSaveNodes.clicked.connect(self.onSaveNodesButtonClicked)
+        self.ui.outputSaveSpans.clicked.connect(self.onSaveSpansButtonClicked)
+
     def reset(self, project: QgsProject):
         """
         Resets the tool to be ready to consolidate a new pair of networks.
@@ -113,6 +116,12 @@ class OFDSDedupToolDialog(QDialog):
 
     def onFinishedSpansButtonClicked(self):
         self.set_state(self.controller.onFinishedButton(self.state))
+
+    def onSaveNodesButtonClicked(self):
+        self.set_state(self.controller.onSaveNodesButton(self.state))
+
+    def onSaveSpansButtonClicked(self):
+        self.set_state(self.controller.onSaveSpansButton(self.state))
 
 
 class Worker(QThread):

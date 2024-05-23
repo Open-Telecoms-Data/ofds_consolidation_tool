@@ -486,7 +486,7 @@
       <widget class="QPushButton" name="outputFinishedButton">
        <property name="geometry">
         <rect>
-         <x>390</x>
+         <x>750</x>
          <y>820</y>
          <width>103</width>
          <height>36</height>
@@ -516,6 +516,32 @@
          <width>0</width>
          <height>300</height>
         </size>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="outputSaveNodes">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>790</y>
+         <width>221</width>
+         <height>36</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Save Nodes GeoJSON</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="outputSaveSpans">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>840</y>
+         <width>221</width>
+         <height>36</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Save Spans GeoJSON</string>
        </property>
       </widget>
      </widget>

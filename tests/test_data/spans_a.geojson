@@ -37,7 +37,6 @@
                         "name": "Happy Haggis Fibre Co"
                     }
                 ],
-
                 "network": {
                     "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
                     "name": "Happy Haggis Fibre Backbone"
@@ -111,14 +110,12 @@
                         }
                     ]
                 },
-
                 "networkProviders": [
                     {
                         "id": "6f6d709e-41ec-492a-a485-dd76544f4d0b",
                         "name": "Happy Haggis Fibre Co"
                     }
                 ],
-
                 "network": {
                     "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
                     "name": "Happy Haggis Fibre Backbone"
@@ -182,7 +179,6 @@
                         "name": "Happy Haggis Fibre Co"
                     }
                 ],
-
                 "network": {
                     "id": "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae",
                     "name": "Happy Haggis Fibre Backbone"

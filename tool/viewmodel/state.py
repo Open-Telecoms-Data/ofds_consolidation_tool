@@ -25,11 +25,14 @@ from ..model.comparison import (
 )
 
 from ..model.network import Network, Node, Span, FeatureT
+
 from ..view_warningbox import (
     show_node_incomplete_consolidation_warning,
     show_multi_consolidation_warning,
     show_warningbox,
 )
+
+from ..view_file_dialog import save_geojson_file_dialog
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +281,7 @@ class ToolNodeComparisonState(AbstractToolComparisonState[Node, NodeComparison])
         )
 
         if span_comparison_state.nTotal < 1:
-            logger.warn("There are no Span Comparisons to be made!")
+            logger.warning("There are no Span Comparisons to be made!")
             show_warningbox(
                 "No Spans to Compare",
                 "No Spans are elegible for comparison!",
@@ -335,6 +338,14 @@ class ToolOutputState(AbstractToolState):
 
     def __init__(self, network: Network) -> None:
         self.output_network = network
+
+    def saveNodes(self):
+        save_geojson_file_dialog(self.output_network.nodes)
+        return self
+
+    def saveSpans(self):
+        save_geojson_file_dialog(self.output_network.spans)
+        return self
 
 
 ToolState = Union[
