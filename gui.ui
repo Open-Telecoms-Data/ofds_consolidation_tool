@@ -42,7 +42,7 @@
         <item>
          <widget class="QGroupBox" name="groupBoxA">
           <property name="title">
-           <string>Network A</string>
+           <string>Primary Network</string>
           </property>
           <layout class="QFormLayout" name="selectFormA">
            <item row="0" column="0">
@@ -71,7 +71,7 @@
         <item>
          <widget class="QGroupBox" name="groupBoxB">
           <property name="title">
-           <string>Network B</string>
+           <string>Secondary Network</string>
           </property>
           <layout class="QFormLayout" name="selectFormB">
            <item row="0" column="0">
@@ -249,14 +249,14 @@
          <item>
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Node A</string>
+            <string>Primary Node</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_2">
            <property name="text">
-            <string>Node B</string>
+            <string>Secondary Node</string>
            </property>
           </widget>
          </item>
@@ -313,7 +313,7 @@
          <item row="0" column="1">
           <widget class="QPushButton" name="sameNodesButton">
            <property name="text">
-            <string>Same</string>
+            <string>Consolidate</string>
            </property>
           </widget>
          </item>
@@ -334,7 +334,7 @@
          <item row="0" column="2">
           <widget class="QPushButton" name="notSameNodesButton">
            <property name="text">
-            <string>Not Same</string>
+            <string>Keep Both</string>
            </property>
           </widget>
          </item>
@@ -450,7 +450,7 @@
          <item row="0" column="1">
           <widget class="QPushButton" name="spansSameButton">
            <property name="text">
-            <string>Same</string>
+            <string>Consolidate</string>
            </property>
           </widget>
          </item>
@@ -471,7 +471,7 @@
          <item row="0" column="2">
           <widget class="QPushButton" name="spansNotSameButton">
            <property name="text">
-            <string>Not Same</string>
+            <string>Keep Both</string>
            </property>
           </widget>
          </item>
@@ -493,7 +493,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Finished</string>
+        <string>Close</string>
        </property>
       </widget>
       <widget class="QgsMapCanvas" name="outputMapCanvas" native="true">
@@ -558,5 +558,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>outputFinishedButton</sender>
+   <signal>pressed()</signal>
+   <receiver>OFDSDedupToolDialog</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>811</x>
+     <y>883</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>473</x>
+     <y>482</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
