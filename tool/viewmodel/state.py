@@ -183,7 +183,7 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
                 if not show_multi_consolidation_warning(
-                    "A", comparison.feature_a, other_span
+                    "Primary", comparison.feature_a, other_span
                 ):
                     return False
 
@@ -191,7 +191,7 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
                 if not show_multi_consolidation_warning(
-                    "B", comparison.feature_b, other_span
+                    "Secondary", comparison.feature_b, other_span
                 ):
                     return False
 

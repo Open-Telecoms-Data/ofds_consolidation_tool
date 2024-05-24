@@ -5,7 +5,7 @@ from .model.network import Feature, Node, Span
 
 
 def show_multi_consolidation_warning(
-    a_or_b: Literal["A", "B"],
+    a_or_b: str,
     feature: Feature,
     other_feature: Feature,
 ) -> bool:
