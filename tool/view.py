@@ -246,8 +246,8 @@ class InfoPanelView:
         <table>
           <tr>
             <th>Attribute</th>
-            <th>Value A</th>
-            <th>Value B</th>
+            <th>Value Primary</th>
+            <th>Value Secondary</th>
             <th>Score</th>
           </tr>
           {
@@ -261,8 +261,8 @@ class InfoPanelView:
         <table>
           <tr>
             <th>Attribute</th>
-            <th>Value A</th>
-            <th>Value B</th>
+            <th>Value Primary</th>
+            <th>Value Secondary</th>
             <th>Score</th>
           </tr>
           {
@@ -299,8 +299,8 @@ class InfoPanelView:
         <table>
           <tr>
             <th>Attribute</th>
-            <th>Value A</th>
-            <th>Value B</th>
+            <th>Value Primary</th>
+            <th>Value Secondary</th>
             <th>Score</th>
           </tr>
           {
@@ -314,8 +314,8 @@ class InfoPanelView:
         <table>
           <tr>
             <th>Attribute</th>
-            <th>Value A</th>
-            <th>Value B</th>
+            <th>Value Primary</th>
+            <th>Value Secondary</th>
             <th>Score</th>
           </tr>
           {
