@@ -342,6 +342,8 @@ class InfoPanelView:
         info_html = f"""
         <h2>Overall Confidence: {int(comparison.confidence)}%</h2>
 
+        <p>These spans start and end at the same nodes.</p>
+
         <h2>Confidence score details</h2>
         """
 
