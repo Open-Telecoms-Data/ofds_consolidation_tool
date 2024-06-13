@@ -357,6 +357,10 @@ class Span(Feature):
             supplier = self.properties.get("supplier", {})
             return supplier.get("name")
 
+        if k == "nodes":
+            # Return ids for start and end nodes
+            return (self.start_id, self.end_id)
+
         return self.properties.get(k)
 
     @property
