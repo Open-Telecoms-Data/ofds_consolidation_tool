@@ -234,44 +234,86 @@ class InfoPanelView:
             for prop in all_props
         ]
 
+        exact_match_rows = [row for row in hi_score_rows if row[3] == 1]
+        strong_match_rows = [row for row in hi_score_rows if row not in exact_match_rows]
+        zero_score_rows = [row for row in all_score_rows if row[3] == 0]
+        missing_data_rows = [row for row in zero_score_rows if row[1] is None or row[1] is [] or row[2] is None or row[2] is []]
+        low_score_rows = [row for row in all_score_rows if row[0] not in hi_score_props and row[3] > 0 and row not in missing_data_rows]
+
         # Display Node info
         info_html = f"""
         <h2>Overall Confidence: {int(comparison.confidence)}%</h2>
 
-        <p>Distance (km): {comparison.distance_km:.2f}</p>
+        <p>Distance between nodes (km): {comparison.distance_km:.2f}</p>
 
-        <h2>Similar Properties</h2>
+        <h2>Confidence score details</h2>
+        """
 
-
+        if len(exact_match_rows) > 0:
+            info_html = info_html + f"""
+        <h3>Exact matches</h3>
+        <p>These properties are exactly the same on both nodes:</p>
         <table>
           <tr>
-            <th>Attribute</th>
-            <th>Value Primary</th>
-            <th>Value Secondary</th>
-            <th>Score</th>
+            <th align="left">Property</th>
+            <th align="left">Value</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in hi_score_rows)
+              "".join(f"<tr><td>{k}</td><td>{va}</td></tr>" for k,va,_,_ in exact_match_rows)
           }
         </table>
+            """
 
-        <h2>All Properties</h2>
+        if len(strong_match_rows) > 0:
 
+            info_html = info_html + f"""
+        <h3>Strong matches</h3>
+        <p>These properties are very similar in both networks for this node:</p>
         <table>
           <tr>
-            <th>Attribute</th>
-            <th>Value Primary</th>
-            <th>Value Secondary</th>
-            <th>Score</th>
+            <th align="left">Property</th>
+            <th align="left">Primary</th>
+            <th align="left">Secondary</th>
+            <th align="left">Confidence</th>
           </tr>
           {
               "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in all_score_rows)
+                      for k,va,vb,sc in strong_match_rows)
+          }
+        </table>
+            """
+
+        if len(low_score_rows) > 0:
+
+            info_html = info_html + f"""
+
+        <h3>Unlikely matches</h3>
+        <p>These properties are not similar in both networks for this node:</p>
+        <table>
+          <tr>
+            <th align="left">Property</th>
+            <th align="left">Primary</th>
+            <th align="left">Secondary</th>
+            <th align="left">Confidence</th>
+          </tr>
+          {
+              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
+                      for k,va,vb,sc in low_score_rows)
           }
         </table>
         """
 
+        if len(missing_data_rows) > 0:
+
+            info_html = info_html + f"""
+        <h3>Missing data</h3>
+        <p>These properties are missing from one or both of the networks for this node:</p>
+        <ul>
+        {
+            "".join(f"<li>{k}</li>" for k,_,_,_ in missing_data_rows)
+        }
+        </ul>
+            """
         return info_html
 
     def render_span_comparison_info(self, comparison: SpanComparison) -> str:
@@ -291,39 +333,84 @@ class InfoPanelView:
             for prop in all_props
         ]
 
+        exact_match_rows = [row for row in hi_score_rows if row[3] == 1]
+        strong_match_rows = [row for row in hi_score_rows if row not in exact_match_rows]
+        zero_score_rows = [row for row in all_score_rows if row[3] == 0]
+        missing_data_rows = [row for row in zero_score_rows if row[1] is None or row[1] is [] or row[2] is None or row[2] is []]
+        low_score_rows = [row for row in all_score_rows if row[0] not in hi_score_props and row[3] > 0 and row not in missing_data_rows]
+
         info_html = f"""
         <h2>Overall Confidence: {int(comparison.confidence)}%</h2>
 
-        <h2>Similar Properties</h2>
+        <h2>Confidence score details</h2>
+        """
 
+        if len(exact_match_rows) > 0:
+            info_html = info_html + f"""
+        <h3>Exact matches</h3>
+
+        <p>These properties are exactly the same on both spans:</p>
         <table>
           <tr>
-            <th>Attribute</th>
-            <th>Value Primary</th>
-            <th>Value Secondary</th>
-            <th>Score</th>
+            <th align="left">Property</th>
+            <th align="left">Value</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in hi_score_rows)
+              "".join(f"<tr><td>{k}</td><td>{va}</td></tr>" for k,va,_,_ in exact_match_rows)
           }
         </table>
+            """
 
-        <h2>All Properties</h2>
+        if len(strong_match_rows) > 0:
 
+            info_html = info_html + f"""
+        <h3>Strong matches</h3>
+        <p>These properties are very similar in both networks for this span:</p>
         <table>
           <tr>
-            <th>Attribute</th>
-            <th>Value Primary</th>
-            <th>Value Secondary</th>
-            <th>Score</th>
+            <th align="left">Property</th>
+            <th align="left">Primary</th>
+            <th align="left">Secondary</th>
+            <th align="left">Confidence</th>
           </tr>
           {
               "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in all_score_rows)
+                      for k,va,vb,sc in strong_match_rows)
+          }
+        </table>
+            """
+
+        if len(low_score_rows) > 0:
+
+            info_html = info_html + f"""
+
+        <h3>Unlikely matches</h3>
+        <p>These properties are not similar in both networks for this span:</p>
+        <table>
+          <tr>
+            <th align="left">Property</th>
+            <th align="left">Primary</th>
+            <th align="left">Secondary</th>
+            <th align="left">Confidence</th>
+          </tr>
+          {
+              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
+                      for k,va,vb,sc in low_score_rows)
           }
         </table>
         """
+
+        if len(missing_data_rows) > 0:
+
+            info_html = info_html + f"""
+        <h3>Missing data</h3>
+        <p>These properties are missing from one or both of the networks for this span:</p>
+        <ul>
+        {
+            "".join(f"<li>{k}</li>" for k,_,_,_ in missing_data_rows)
+        }
+        </ul>
+            """
 
         return info_html
 
