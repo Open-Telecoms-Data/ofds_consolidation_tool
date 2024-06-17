@@ -17,11 +17,14 @@ class OFDSDedupPlugin:
 
     def initGui(self):
         self.action = QAction("Consolidate OFDS", iface.mainWindow())
+        self.action.setObjectName("consolidateOfdsAction")
         self.action.triggered.connect(self.run)
         iface.addToolBarIcon(self.action)
+        iface.addPluginToMenu("&Consolidate OFDS", self.action)
 
     def unload(self):
         iface.removeToolBarIcon(self.action)
+        iface.removePluginToMenu("&Consolidate OFDS", self.action)
         del self.action
 
     def run(self):
