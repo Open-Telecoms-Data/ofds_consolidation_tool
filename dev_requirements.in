@@ -10,3 +10,6 @@ mypy>=1.8,<2
 PyQt5-stubs
 qgis-stubs
 pip-tools
+python-semantic-release
+pyclean
+jinja2-cli

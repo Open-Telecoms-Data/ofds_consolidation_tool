@@ -11,6 +11,7 @@ iface: QgisInterface
 
 from .tool.tool import OFDSDedupToolDialog
 from .tool.style import OFDSStyleToolDialog
+from . import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class OFDSDedupPlugin:
 
     def run_consolidate(self):
         logger.debug("Opening OFDS Consolidate Tool Dialog")
+        logger.debug(f"OFDS Consolidation Tool Plugin v{__version__}")
         logger.debug(
             f"Qt: v{QT_VERSION_STR} PyQt: v{PYQT_VERSION_STR} Python: {sys.version}"
         )
@@ -63,6 +65,7 @@ class OFDSDedupPlugin:
 
     def run_style(self):
         logger.debug("Opening OFDS Style Tool Dialog")
+        logger.debug(f"OFDS Consolidation Tool Plugin v{__version__}")
         project = QgsProject.instance()
         if not project:
             raise Exception
