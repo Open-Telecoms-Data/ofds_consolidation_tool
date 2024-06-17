@@ -4,31 +4,52 @@ import sys
 from PyQt5.QtCore import PYQT_VERSION_STR, QT_VERSION_STR
 from PyQt5.QtWidgets import QAction
 from qgis.core import QgsProject
-from qgis.utils import iface  # type: ignore
+from qgis.gui import QgisInterface
+from qgis.utils import iface
+
+iface: QgisInterface
 
 from .tool.tool import OFDSDedupToolDialog
+from .tool.style import OFDSStyleToolDialog
 
 logger = logging.getLogger(__name__)
 
 
 class OFDSDedupPlugin:
     def __init__(self):
-        self.tool_dialog = OFDSDedupToolDialog()
+        self.consolidate_tool_dialog = OFDSDedupToolDialog()
+        self.style_tool_dialog = OFDSStyleToolDialog()
 
     def initGui(self):
-        self.action = QAction("Consolidate OFDS", iface.mainWindow())
-        self.action.setObjectName("consolidateOfdsAction")
-        self.action.triggered.connect(self.run)
-        iface.addToolBarIcon(self.action)
-        iface.addPluginToMenu("&Consolidate OFDS", self.action)
+        self.action_consolidate = QAction("Consolidate OFDS", iface.mainWindow())
+        self.action_consolidate.setObjectName("consolidateOfdsAction")
+        self.action_consolidate.triggered.connect(self.run_consolidate)
+        iface.addToolBarIcon(self.action_consolidate)
+        iface.addPluginToMenu("&OFDS", self.action_consolidate)
+
+        self.action_style = QAction("Style OFDS", iface.mainWindow())
+        self.action_style.setObjectName("styleOfdsAction")
+        self.action_style.triggered.connect(self.run_style)
+        iface.addToolBarIcon(self.action_style)
+        iface.addPluginToMenu("&OFDS", self.action_style)
 
     def unload(self):
-        iface.removeToolBarIcon(self.action)
-        iface.removePluginToMenu("&Consolidate OFDS", self.action)
-        del self.action
+        iface.removePluginMenu("&OFDS", self.action_consolidate)
+        iface.removeToolBarIcon(self.action_consolidate)
+        del self.action_consolidate
 
-    def run(self):
-        logger.debug("Running OFDS Consolidation plugin")
+        iface.removePluginMenu("&OFDS", self.action_style)
+        iface.removeToolBarIcon(self.action_style)
+        del self.action_style
+
+        self.consolidate_tool_dialog.close()
+        del self.consolidate_tool_dialog
+
+        self.style_tool_dialog.close()
+        del self.style_tool_dialog
+
+    def run_consolidate(self):
+        logger.debug("Opening OFDS Consolidate Tool Dialog")
         logger.debug(
             f"Qt: v{QT_VERSION_STR} PyQt: v{PYQT_VERSION_STR} Python: {sys.version}"
         )
@@ -37,5 +58,14 @@ class OFDSDedupPlugin:
         if not project:
             raise Exception
 
-        self.tool_dialog.reset(project=project)
-        self.tool_dialog.show()
+        self.consolidate_tool_dialog.reset(project=project)
+        self.consolidate_tool_dialog.show()
+
+    def run_style(self):
+        logger.debug("Opening OFDS Style Tool Dialog")
+        project = QgsProject.instance()
+        if not project:
+            raise Exception
+
+        self.style_tool_dialog.refresh_layers()
+        self.style_tool_dialog.show()
