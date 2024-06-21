@@ -62,8 +62,9 @@ class Comparison:
         self.confidence = self.total / highest * 100
 
     def get_high_scoring_properties(self):
-        # Return scores that are over 0.5 - this is arbitrary, may want to increase
-        return [k for k, v in self.scores.items() if v > 0.5]
+        # Return scores that are over 0.75
+        # This is used to explain the overall similarity score. Appears in provenance data and UI.
+        return [k for k, v in self.scores.items() if v > 0.75]
 
     def compare_equals(self, first, second):
         if first == second and first is not None:
