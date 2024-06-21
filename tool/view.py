@@ -1,6 +1,7 @@
 import logging
-from typing import List, Optional, Tuple, Union
 from dataclasses import dataclass
+from typing import List, Optional, Tuple, Union
+
 from PyQt5.QtWidgets import (
     QTextEdit,
     QPushButton,
@@ -24,9 +25,6 @@ from .model.comparison import (
     NodeComparison,
     SpanComparison,
 )
-from ..gui import Ui_OFDSDedupToolDialog
-
-from ..helpers import EPSG3857, getOpenStreetMapLayer
 from .model.network import FeatureType
 from .viewmodel.state import (
     ToolLayerSelectState,
@@ -36,6 +34,9 @@ from .viewmodel.state import (
     ToolState,
     ToolStateEnum,
 )
+from ..gui import Ui_OFDSDedupToolDialog
+from ..helpers import EPSG3857, getOpenStreetMapLayer
+from ..resources import STYLESHEET_NODES, STYLESHEET_SPANS
 
 logger = logging.getLogger(__name__)
 
@@ -643,6 +644,9 @@ class OutputView:
 
     def update(self, state: Optional[ToolState]):
         if isinstance(state, ToolOutputState):
+            state.output_network.nodesLayer.loadNamedStyle(STYLESHEET_NODES.as_posix())
+            state.output_network.spansLayer.loadNamedStyle(STYLESHEET_SPANS.as_posix())
+
             self.minimapview.update(
                 MiniMapView.State(
                     nodesLayer=state.output_network.nodesLayer,
