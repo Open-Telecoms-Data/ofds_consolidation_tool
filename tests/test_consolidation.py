@@ -1,8 +1,8 @@
 import logging
-
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Tuple
+
 from qgis.core import QgsVectorLayer
 
 from tool.model.comparison import (
@@ -12,11 +12,10 @@ from tool.model.comparison import (
 )
 from tool.model.consolidation import NetworkNodesConsolidator, NetworkSpansConsolidator
 from tool.model.network import Network
-from ..tool.model.qgis import write_geojson_from_features
+from .. import setup_logging
+from ..tool.model.qgis_utils import write_geojson_from_features
 
 # QgsApplication.setPrefixPath("/usr")  # for Linux?
-
-from .. import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +43,8 @@ def load_test_networks(request) -> Tuple[Network, Network]:
     assert len(list(a_spans_layer.getFeatures())) == 3
     assert len(list(b_spans_layer.getFeatures())) == 3
 
-    network_a = Network.from_qgs_vectorlayers(a_nodes_layer, a_spans_layer)
-    network_b = Network.from_qgs_vectorlayers(b_nodes_layer, b_spans_layer)
+    network_a = Network.from_qgs_vectorlayers(a_nodes_layer, a_spans_layer, "cd69aa6d-d9d2-4548-b990-6b8b0d78f4ae")
+    network_b = Network.from_qgs_vectorlayers(b_nodes_layer, b_spans_layer, "21be8e29-5a42-4c66-a4cd-0b3693160aba")
 
     # Numbers based on the test data layers
     assert len(network_a.nodes) == 4
@@ -53,9 +52,10 @@ def load_test_networks(request) -> Tuple[Network, Network]:
     assert len(network_a.spans) == 3
     assert len(network_b.spans) == 3
 
-    return (network_a, network_b)
+    return network_a, network_b
 
 
+# noinspection PyUnusedLocal
 def test_consolidation(qgis_app, qgis_new_project, request):
     network_a, network_b = load_test_networks(request)
 
@@ -96,7 +96,7 @@ def test_consolidation(qgis_app, qgis_new_project, request):
 
     # Test Spans Consolidation
     nsc = NetworkSpansConsolidator(
-        network_a_consolidated_nodes, network_b_consolidated_nodes
+        network_a_consolidated_nodes, network_b_consolidated_nodes, new_ofds_network=nnc.new_ofds_network
     )
 
     span_comparisons = nsc.get_comparisons_to_ask_user()
@@ -132,26 +132,35 @@ def test_consolidation(qgis_app, qgis_new_project, request):
     assert len(consolidated_network.spans) == 4
     assert len(list(consolidated_network.spansLayer.getFeatures())) == 4
 
+    # Check that all Spans' start/end link to valid Node IDs
+    node_ids = set(n.id for n in consolidated_network.nodes)
+
+    for span in consolidated_network.spans:
+        assert span.start_id in node_ids
+        assert span.properties["start"]["id"] == span.start_id
+        assert span.end_id in node_ids
+        assert span.properties["end"]["id"] == span.end_id
+
     # Check that merged nodes & spans have multiple networkProviders
     assert (
-        len(
-            [
-                n
-                for n in consolidated_network.nodes
-                if len(n.properties["networkProviders"]) > 1
-            ]
-        )
-        == 3
+            len(
+                [
+                    n
+                    for n in consolidated_network.nodes
+                    if len(n.properties["networkProviders"]) > 1
+                ]
+            )
+            == 3
     )
     assert (
-        len(
-            [
-                s
-                for s in consolidated_network.spans
-                if len(s.properties["networkProviders"]) > 1
-            ]
-        )
-        == 2
+            len(
+                [
+                    s
+                    for s in consolidated_network.spans
+                    if len(s.properties["networkProviders"]) > 1
+                ]
+            )
+            == 2
     )
 
     with TemporaryDirectory() as td:

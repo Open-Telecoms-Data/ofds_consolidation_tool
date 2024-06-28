@@ -155,6 +155,8 @@ class NodeComparison(Comparison):
         node_b: Node,
         weights: Optional[Dict[str, float]] = None,
     ):
+        super().__init__(weights)
+
         self.features = (node_a, node_b)
         self.weights = weights if weights else self.default_node_weights()
 
@@ -305,6 +307,8 @@ class SpanComparison(Comparison):
         return self.features[1]
 
     def __init__(self, span_a, span_b, weights=None):
+        super().__init__(weights)
+
         self.features = (span_a, span_b)
         self.span_a_id = span_a.id
         self.span_b_id = span_b.id
@@ -449,7 +453,6 @@ class ConsolidationReason:
     manual: bool = False
 
 
-@dataclass(frozen=True)
 class ComparisonOutcome(Generic[ComparisonT]):
     """
     Represents the outcome of the comparison of two Features by the user.
@@ -460,6 +463,15 @@ class ComparisonOutcome(Generic[ComparisonT]):
     # Consolidate is either False, or an instance of ConsolidationReason
     consolidate: Union[Literal[False], ConsolidationReason]
 
+    def __init__(self, comparison: ComparisonT, consolidate: Union[Literal[False], ConsolidationReason]):
+        self.comparison = comparison
+        self.consolidate = consolidate
+
+    def __hash__(self):
+        return hash((self.comparison, self.consolidate))
+
+    def __eq__(self, other):
+        return self.comparison == other.comparison and self.consolidate == other.consolidate
 
 if TYPE_CHECKING:
     NodeComparisonOutcome = ComparisonOutcome[NodeComparison]

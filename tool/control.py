@@ -1,12 +1,10 @@
+import logging
 from typing import List, cast
 
-import logging
 from qgis.core import QgsProject, QgsMapLayer, QgsVectorLayer, QgsMapLayerType
 
-from .model.settings import Settings
-
-from ..gui import Ui_OFDSDedupToolDialog
 from .model.network import Network
+from .model.settings import Settings
 from .viewmodel.state import (
     ToolLayerSelectState,
     ToolNodeComparisonState,
@@ -14,8 +12,10 @@ from .viewmodel.state import (
     ToolSpanComparisonState,
     ToolState,
 )
+from ..gui import Ui_OFDSDedupToolDialog
 
 logger = logging.getLogger(__name__)
+
 
 # The controller is responsible for acceping input from the UI (i.e. button clicks)
 # and then translating that into state updates.
@@ -52,6 +52,24 @@ class ToolController:
 
         return ToolLayerSelectState(selectableLayers)
 
+    def onLayerSelectComboBoxUpdate(self, state: ToolState) -> ToolState:
+        if isinstance(state, ToolLayerSelectState):
+            if state._is_populating_layers:
+                # Don't update when layers are still being populated
+                return state
+
+            # Find Network IDs for the selected layers and update the Network selection list
+            nodes_layer_a: QgsVectorLayer = self.ui.nodesComboBoxA.currentData()
+            spans_layer_a: QgsVectorLayer = self.ui.spansComboBoxA.currentData()
+
+            nodes_layer_b: QgsVectorLayer = self.ui.nodesComboBoxB.currentData()
+            spans_layer_b: QgsVectorLayer = self.ui.spansComboBoxB.currentData()
+
+            return state.update_networks_list((nodes_layer_a, nodes_layer_b), (spans_layer_a, spans_layer_b))
+
+        else:
+            raise ControllerInvalidState
+
     def onStartButton(self, state: ToolState) -> ToolState:
         """
         When the start button is pressed, transition to comparing nodes.
@@ -61,11 +79,13 @@ class ToolController:
             networkA = Network.from_qgs_vectorlayers(
                 nodesLayer=self.ui.nodesComboBoxA.currentData(),
                 spansLayer=self.ui.spansComboBoxA.currentData(),
+                network_id=self.ui.networkComboBoxA.currentData(),
             )
 
             networkB = Network.from_qgs_vectorlayers(
                 nodesLayer=self.ui.nodesComboBoxB.currentData(),
                 spansLayer=self.ui.spansComboBoxB.currentData(),
+                network_id=self.ui.networkComboBoxB.currentData(),
             )
 
             # TODO: Find the nodes to compare
@@ -87,7 +107,7 @@ class ToolController:
 
     def onNextButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
+                state, ToolSpanComparisonState
         ):
             state.gotoNextComparison()
             return state
@@ -97,7 +117,7 @@ class ToolController:
 
     def onPrevButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
+                state, ToolSpanComparisonState
         ):
             state.gotoPrevComparison()
             return state
@@ -107,7 +127,7 @@ class ToolController:
 
     def onSameButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
+                state, ToolSpanComparisonState
         ):
             state.setOutcomeConsolidate()
             return state
@@ -117,7 +137,7 @@ class ToolController:
 
     def onNotSameButton(self, state: ToolState) -> ToolState:
         if isinstance(state, ToolNodeComparisonState) or isinstance(
-            state, ToolSpanComparisonState
+                state, ToolSpanComparisonState
         ):
             state.setOutcomeDontConsolidate()
             return state

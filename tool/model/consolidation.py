@@ -1,24 +1,9 @@
+import json
+import logging
+import uuid
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, Iterable, List, Set, Tuple, Type
 
-import uuid
-import json
-import logging
-
-from .qgis import (
-    create_qgis_geojson_layer_from_nodes,
-    create_qgis_geojson_layer_from_spans,
-)
-
-from .properties import (
-    NODES_PROPERTIES_MERGE_CONFIG,
-    SPANS_PROPERTIES_MERGE_CONFIG,
-    PropMergeOp,
-    merge_features_properties,
-    generate_provenance_data,
-)
-
-from .network import Node, Network, Span, FeatureT, Feature
 from .comparison import (
     NodeComparison,
     NodeComparisonOutcome,
@@ -27,25 +12,55 @@ from .comparison import (
     ComparisonT,
     SpanComparisonOutcome,
 )
+from .network import Node, Network, Span, FeatureT, Feature, NetworkDescription, OFDSInvalidFeature
+from .properties import (
+    NODES_PROPERTIES_MERGE_CONFIG,
+    SPANS_PROPERTIES_MERGE_CONFIG,
+    PropMergeOp,
+    merge_features_properties,
+    generate_provenance_data,
+)
+from .qgis_utils import (
+    create_qgis_geojson_layer_from_nodes,
+    create_qgis_geojson_layer_from_spans,
+)
 
 logger = logging.getLogger(__name__)
 
 
 # TODO: sort by diagonal distance
 class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
-
     FeatureCls: Type[Feature]
 
     PROPS_MERGE_CONFIG: List[Tuple[str, PropMergeOp]]
 
+    new_ofds_network: NetworkDescription
+    _next_feature_id: int
+
+    # Lookup for ID's of nodes/spans after consolidation
+    network_a_ids_map: Dict[str, str]
     network_b_ids_map: Dict[str, str]
+
+    def __init__(self):
+        self._next_feature_id = 1
+        self.network_a_ids_map = dict()
+        self.network_b_ids_map = dict()
+
+    def allocate_new_feature_id(self) -> str:
+        new_id = str(self._next_feature_id)
+        self._next_feature_id += 1
+        return new_id
 
     @abstractmethod
     def get_comparisons_to_ask_user(self) -> List[ComparisonT]: ...
 
-    def _merge_features(self, primary: Feature, secondary: Feature, provenance: Dict) -> Feature:
+    def _merge_features(self, primary: Feature, secondary: Feature, provenance: Dict,
+                        new_network: NetworkDescription) -> Feature:
+        # Create a new ID for this span
         # Update ID map to keep track of which IDs have been reassigned
-        self.network_b_ids_map[secondary.id] = primary.id
+        new_id = self.allocate_new_feature_id()
+        self.network_a_ids_map[primary.id] = new_id
+        self.network_b_ids_map[secondary.id] = new_id
 
         # Merge properties
         props = merge_features_properties(self.PROPS_MERGE_CONFIG, primary, secondary)
@@ -55,8 +70,8 @@ class AbstractNetworkConsolidator(Generic[FeatureT, ComparisonT], ABC):
 
         # Create merged Feature
         return self.FeatureCls(
-            primary.id, props, primary.featureId, primary.featureGeometry
-        )
+            "", props, primary.featureId, primary.featureGeometry, new_network
+        ).with_new_id(new_id, ofds_network=new_network)
 
 
 class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]):
@@ -78,17 +93,17 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
     user_comparisons: List[NodeComparison]
     outcomes: List[NodeComparisonOutcome]
 
-    # Lookup for Id's of nodes from Network B after consolidation
-    network_b_ids_map: Dict[str, str]
-
     def __init__(
-        self,
-        network_a: Network,
-        network_b: Network,
-        merge_above: int = 100,
-        ask_above: int = 0,
-        match_radius_km: float = 10.0,
+            self,
+            network_a: Network,
+            network_b: Network,
+            merge_above: int = 100,
+            ask_above: int = 0,
+            match_radius_km: float = 10.0,
     ):
+
+        super().__init__()
+
         self.network_a = network_a
         self.network_b = network_b
         self.merge_threshold = merge_above
@@ -96,7 +111,11 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         self.match_radius_km = match_radius_km
         self.outcomes = list()
         self.user_comparisons = []
-        self.network_b_ids_map = dict()
+
+        self.new_ofds_network = NetworkDescription(
+            id=uuid.uuid4().hex,
+            name=f"Consolidated Network of {network_a.ofds_network.name} and {network_b.ofds_network.name}"
+        )
 
         self._compare_nodes()
 
@@ -111,7 +130,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
             for b_node in self.network_b.nodes:
                 comparison = NodeComparison(a_node, b_node)
                 if comparison.distance_km > self.match_radius_km:
-                    # No chance of match, just add immedate no-consolidate outcome
+                    # No chance of match, just add immediate no-consolidate outcome
                     self.add_comparison_outcomes(
                         [
                             NodeComparisonOutcome(
@@ -146,8 +165,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         return self.user_comparisons
 
     def add_comparison_outcomes(
-        self,
-        outcomes: Iterable[NodeComparisonOutcome],
+            self,
+            outcomes: Iterable[NodeComparisonOutcome],
     ):
         self.outcomes.extend(outcomes)
 
@@ -196,7 +215,8 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
                 consolidated_node = self._merge_features(
                     outcome.consolidate.primary,
                     outcome.consolidate.secondary,
-                    provenance_data
+                    provenance_data,
+                    self.new_ofds_network,
                 )
                 logger.info(f"Creating consolidated node: {consolidated_node.name}")
                 assert consolidated_node.id not in nodes
@@ -205,27 +225,22 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
 
         # Gather unconsolidated nodes from A
         for _id in unconsolidated_ids_a:
-            assert _id not in nodes
-            nodes[_id] = nodes_a[_id]
+            new_id = self.allocate_new_feature_id()
+            self.network_a_ids_map[_id] = new_id
+            nodes[new_id] = nodes_a[_id].with_new_id(new_id, ofds_network=self.new_ofds_network)
 
         # Gather unconsolidated nodes from B, creating new IDs if there's a clash
         for _id in unconsolidated_ids_b:
-            if _id in nodes:
-                # rewrite ID of node B
-                logger.info("Found Node in Network B with an existing ID, rewriting.")
-                new_node = nodes_b[_id].with_new_id(str(uuid.uuid4()))
-                assert new_node.id not in nodes
-                nodes[new_node.id] = new_node
-            else:
-                assert _id not in nodes
-                nodes[_id] = nodes_b[_id]
+            new_id = self.allocate_new_feature_id()
+            self.network_b_ids_map[_id] = new_id
+            nodes[new_id] = nodes_b[_id].with_new_id(new_id, ofds_network=self.new_ofds_network)
 
         return set(nodes.values())
 
-    def _remap_network_b_span_node_ids(self, span: Span) -> Span:
+    def _remap_span_node_ids(self, span: Span, lookup: Dict[str, str]) -> Span:
         new_properties = span.properties.copy()
-        p_start = new_properties["start"]
-        p_end = new_properties["end"]
+        p_start = new_properties["start"].copy()
+        p_end = new_properties["end"].copy()
 
         # Check in case properties have been loaded as nested JSON string
         if isinstance(p_start, str):
@@ -234,11 +249,11 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         if isinstance(p_end, str):
             p_end = json.loads(p_end)
 
-        if p_start["id"] in self.network_b_ids_map:
-            p_start["id"] = self.network_b_ids_map[p_start["id"]]
-
-        if p_end["id"] in self.network_b_ids_map:
-            p_end["id"] = self.network_b_ids_map[p_end["id"]]
+        try:
+            p_start["id"] = lookup[p_start["id"]]
+            p_end["id"] = lookup[p_end["id"]]
+        except KeyError:
+            raise OFDSInvalidFeature(f"Error: Span {span.id} has an invalid start/end")
 
         new_properties["start"] = p_start
         new_properties["end"] = p_end
@@ -248,6 +263,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
             properties=new_properties,
             featureId=span.featureId,
             featureGeometry=span.featureGeometry,
+            ofds_network=self.new_ofds_network,
         )
         return new_span
 
@@ -259,26 +275,24 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         new_network_a = Network(
             nodes=nodes,
             nodesLayer=qgs_layer,
-            spans=self.network_a.spans,
+            spans=list(self._remap_span_node_ids(span, lookup=self.network_a_ids_map) for span in self.network_a.spans),
             spansLayer=self.network_a.spansLayer,
+            ofds_network=self.network_a.ofds_network,
         )
 
         # Network B span start/end IDs may be remapped
         new_network_b = Network(
             nodes=nodes,
             nodesLayer=qgs_layer,
-            spans=list(
-                self._remap_network_b_span_node_ids(span)
-                for span in self.network_b.spans
-            ),
+            spans=list(self._remap_span_node_ids(span, lookup=self.network_b_ids_map) for span in self.network_b.spans),
             spansLayer=self.network_b.spansLayer,
+            ofds_network=self.network_b.ofds_network,
         )
 
-        return (new_network_a, new_network_b)
+        return new_network_a, new_network_b
 
 
 class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]):
-
     FeatureCls = Span
 
     PROPS_MERGE_CONFIG = SPANS_PROPERTIES_MERGE_CONFIG
@@ -289,17 +303,17 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
     matched_spans_in_a: Set[str]
     matched_spans_in_b: Set[str]
 
-    network_b_ids_map: Dict[str, str]
-
     comparison_outcomes: List[NodeComparisonOutcome]
 
-    def __init__(self, network_a: Network, network_b: Network):
+    def __init__(self, network_a: Network, network_b: Network, new_ofds_network: NetworkDescription):
+        super().__init__()
+
         self.network_a = network_a
         self.network_b = network_b
-        self.network_b_ids_map = dict()
         self.matched_spans_in_a = set()
         self.matched_spans_in_b = set()
         self.comparison_outcomes = list()
+        self.new_ofds_network = new_ofds_network
 
     def get_comparisons_to_ask_user(self) -> List[SpanComparison]:
         network_a_index: Dict[Tuple[str, str], Span]
@@ -369,41 +383,35 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
             if isinstance(outcome.consolidate, ConsolidationReason):
                 assert isinstance(outcome.consolidate.primary, Span)
                 assert isinstance(outcome.consolidate.secondary, Span)
-                
+
                 provenance_data = generate_provenance_data(outcome.consolidate)
 
                 consolidated_span = self._merge_features(
                     outcome.consolidate.primary,
                     outcome.consolidate.secondary,
-                    provenance_data
+                    provenance_data,
+                    self.new_ofds_network,
                 )
-                logger.info(f"Creating consolidated node: {consolidated_span.name}")
+                logger.info(f"Creating consolidated span: {consolidated_span.name}")
                 assert consolidated_span.id not in spans
                 assert isinstance(consolidated_span, Span)
                 spans[consolidated_span.id] = consolidated_span
 
         # Gather unconsolidated nodes from A
         for _id in unconsolidated_ids_a:
-            assert _id not in spans
-            spans[_id] = spans_a[_id]
+            new_id = self.allocate_new_feature_id()
+            spans[new_id] = spans_a[_id].with_new_id(new_id, ofds_network=self.new_ofds_network)
 
         # Gather unconsolidated nodes from B, creating new IDs if there's a clash
         for _id in unconsolidated_ids_b:
-            if _id in spans:
-                # rewrite ID of node B
-                logger.info("Found Span in Network B with an existing ID, rewriting.")
-                new_node = spans_b[_id].with_new_id(str(uuid.uuid4()))
-                assert new_node.id not in spans
-                spans[new_node.id] = new_node
-            else:
-                assert _id not in spans
-                spans[_id] = spans_b[_id]
+            new_id = self.allocate_new_feature_id()
+            spans[new_id] = spans_b[_id].with_new_id(new_id, ofds_network=self.new_ofds_network)
 
         return set(spans.values())
 
     def get_consolidated_network_from_outcomes(
-        self,
-        outcomes: List[SpanComparisonOutcome],
+            self,
+            outcomes: List[SpanComparisonOutcome],
     ) -> Network:
         """
         This method should be called after the user has been asked about all manual
@@ -422,26 +430,5 @@ class NetworkSpansConsolidator(AbstractNetworkConsolidator[Span, SpanComparison]
             spans=new_spans,
             nodesLayer=self.network_a.nodesLayer,
             spansLayer=spans_layer,
+            ofds_network=self.new_ofds_network,
         )
-
-    def _remap_network_b_span_node_ids(self, span: Span) -> Span:
-        new_properties = span.properties.copy()
-        p_start = new_properties["start"]
-        p_end = new_properties["end"]
-
-        if p_start["id"] in self.network_b_ids_map:
-            p_start["id"] = self.network_b_ids_map[p_start["id"]]
-
-        if p_end["id"] in self.network_b_ids_map:
-            p_end["id"] = self.network_b_ids_map[p_end["id"]]
-
-        new_properties["start"] = p_start
-        new_properties["end"] = p_end
-
-        new_span = Span(
-            span.id,
-            properties=new_properties,
-            featureId=span.featureId,
-            featureGeometry=span.featureGeometry,
-        )
-        return new_span

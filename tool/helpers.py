@@ -1,5 +1,5 @@
-import logging
 import collections.abc
+import logging
 
 from qgis.core import (
     QgsMapLayer,
@@ -7,10 +7,10 @@ from qgis.core import (
     QgsVectorLayer,
     QgsRasterLayer,
     QgsCoordinateReferenceSystem,
+    QgsWkbTypes,
 )
 
 logger = logging.getLogger(__name__)
-
 
 # Display our data on the embedded maps in the Web Mercator CRS (aka EPSG 3857),
 # as used by OpenStreetMap.
@@ -24,9 +24,12 @@ def isQgsMapLayerOFDS(layer: QgsVectorLayer) -> bool:
     """
     Try to figure out if a given layer is OFDS or not, so we can warn users if they try to use a non-OFDS layer with the consolidation tool.
     """
-    # TODO: how?
-    # maybe split this into two functions Nodes vs Spans
-    return True
+    # It must be either a Points layer (Nodes) or a Lines layer (Spans)
+    # TODO: It's features must have an "id" property
+    # TODO: It's features must have a "network" properties, which is an object, which has an "id" property
+    if (layer.geometryType() == QgsWkbTypes.GeometryType.PointGeometry) or (
+            layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry):
+        return True
 
 
 def getOpenStreetMapLayer(project: QgsProject) -> QgsMapLayer:
@@ -64,7 +67,6 @@ def getOpenStreetMapLayer(project: QgsProject) -> QgsMapLayer:
 def flatten(obj, parent_key=False, separator="."):
     """
     Turn a nested dictionary into a flattened dictionary
-    :param dictionary: The dictionary to flatten
     :param parent_key: The string to prepend to dictionary's keys
     :param separator: The string used to separate flattened keys
     :return: A flattened dictionary

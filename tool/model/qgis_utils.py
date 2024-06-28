@@ -79,7 +79,7 @@ def create_qgis_geojson_layer_from_features(
 
     project.addMapLayer(layer, True)
 
-    return (layer, new_features)
+    return layer, new_features
 
 
 def create_qgis_geojson_layer_from_nodes(
