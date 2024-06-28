@@ -1,13 +1,11 @@
 import json
 import logging
-
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
-from pprint import pprint
-from typing import Any, Dict, List, TypeVar, cast
+from typing import Any, Dict, List, TypeVar, cast, Optional
 
 from PyQt5.QtCore import QVariant
-
 from qgis.core import (
     QgsFeature,
     QgsSpatialIndex,
@@ -19,6 +17,26 @@ from qgis.core import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class NetworkDescription:
+    """Top-level elements that describe a network."""
+    id: str
+    name: str
+
+    @classmethod
+    def from_network_object(cls, network: Dict[str, Any]) -> "NetworkDescription":
+        return cls(
+            id=network["id"],
+            name=network.get("name", f"Unnamed Network <{network['id']}>")
+        )
+
+    def to_network_object(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
 
 
 NESTED_PROPERTIES = [
@@ -49,14 +67,27 @@ class Feature(ABC):
     Wrapper around an OFDS-compliant QgsFeature.
     """
 
+    id: str  # id is the OFDS id
     featureId: int  # featureId is the QGIS-internal Id
     featureType: FeatureType
     featureGeometry: QgsGeometry
-    id: str  # id is the OFDS id
     properties: Dict[str, Any]
+    ofds_network: NetworkDescription
 
     @abstractmethod
-    def get(self, k: str) -> Any: ...
+    def get(self, k: str) -> Any:
+        ...
+
+    def with_new_id(self, new_id: str, ofds_network: Optional[NetworkDescription] = None):
+        """Return a new Feature as a copy of the current Feature but with a new ID"""
+        # TODO: Update provenance somehow to reflect ID change?
+        new_props = self.properties.copy()
+        new_props["id"] = new_id
+        if ofds_network is not None:
+            new_props["network"] = ofds_network.to_network_object()
+        return type(self)(_id=new_id, featureId=self.featureId, featureGeometry=self.featureGeometry,
+                          properties=new_props,
+                          ofds_network=self.ofds_network)
 
     @classmethod
     def from_qgis_feature(cls, feature: QgsFeature):
@@ -79,37 +110,46 @@ class Feature(ABC):
                 properties[attribute] = value
 
         if "id" not in properties or not isinstance(properties["id"], str):
-            raise OFDSInvalidFeature
+            raise OFDSInvalidFeature("Feature must have an id")
+
+        if "id" not in properties.get("network", {}) or not isinstance(properties.get("network", {}).get("id"), str):
+            raise OFDSInvalidFeature("Feature.network must have an id")
+
         ofds_id = properties["id"]
+        ofds_network = NetworkDescription.from_network_object(properties["network"])
+
         return cls(
-            id=ofds_id,
+            _id=ofds_id,
             properties=properties,
             featureId=feature.id(),
             featureGeometry=feature.geometry(),
+            ofds_network=ofds_network,
         )
 
     def __init__(
-        self,
-        id: str,
-        properties: Dict[str, Any],
-        featureId: int,
-        featureGeometry: QgsGeometry,
+            self,
+            _id: str,
+            properties: Dict[str, Any],
+            featureId: int,
+            featureGeometry: QgsGeometry,
+            ofds_network: NetworkDescription,
     ):
-        self.id = id
+        self.id = _id
         self.properties = self._convert_properties(properties)
         self.featureId = featureId
         self.featureGeometry = featureGeometry
+        self.ofds_network = ofds_network
 
         if (
-            self.featureType == FeatureType.NODE
-            and not self.featureGeometry.type()
-            == QgsWkbTypes.GeometryType.PointGeometry
+                self.featureType == FeatureType.NODE
+                and not self.featureGeometry.type()
+                        == QgsWkbTypes.GeometryType.PointGeometry
         ):
             raise OFDSInvalidFeature("Nodes layer must be PointGeometry")
 
         if (
-            self.featureType == FeatureType.SPAN
-            and not self.featureGeometry.type() == QgsWkbTypes.GeometryType.LineGeometry
+                self.featureType == FeatureType.SPAN
+                and not self.featureGeometry.type() == QgsWkbTypes.GeometryType.LineGeometry
         ):
             raise OFDSInvalidFeature("Spans layer must be LineGeometry")
 
@@ -117,17 +157,6 @@ class Feature(ABC):
     def name(self) -> str:
         """Human readable name"""
         return cast(str, self.properties.get("name", self.id))
-
-    def with_new_id(self, new_id: str):
-        # TODO: Update provenance somehow to reflect the ID change?
-        props = self.properties.copy()
-        props["id"] = new_id
-        return self.__class__(
-            new_id,
-            properties=props,
-            featureId=self.featureId,
-            featureGeometry=self.featureGeometry,
-        )
 
     def _convert_properties(self, properties):
         """Convert properties to their proper types. Node/Span specific."""
@@ -142,9 +171,9 @@ class Feature(ABC):
         if isinstance(other, Feature):
             # TODO: also add Network id when we get that
             return (
-                self.id == other.id
-                and self.featureId == other.featureId
-                and self.featureType == other.featureType
+                    self.id == other.id
+                    and self.featureId == other.featureId
+                    and self.featureType == other.featureType
             )
         else:
             raise ValueError("Can't compare Feature to non-Feature")
@@ -359,7 +388,7 @@ class Span(Feature):
 
         if k == "nodes":
             # Return ids for start and end nodes
-            return (self.start_id, self.end_id)
+            return self.start_id, self.end_id
 
         return self.properties.get(k)
 
@@ -410,30 +439,40 @@ class Network:
     nodesSpacialIndex: QgsSpatialIndex
     spansSpacialIndex: QgsSpatialIndex
 
+    ofds_network: NetworkDescription
+
     @classmethod
     def from_qgs_vectorlayers(
-        cls, nodesLayer: QgsVectorLayer, spansLayer: QgsVectorLayer
+            cls, nodesLayer: QgsVectorLayer, spansLayer: QgsVectorLayer, network_id: str,
     ):
-        # Load in all the nodes/spans from layer features
-        nodes = list(Node.from_qgis_feature(f) for f in list(nodesLayer.getFeatures()))
-        spans = list(Span.from_qgis_feature(f) for f in list(spansLayer.getFeatures()))
+        # Load in all the nodes/spans from layer features, selecting only from the given network ID
+        nodes = list(n for n in [Node.from_qgis_feature(f) for f in list(nodesLayer.getFeatures())] if
+                     n.ofds_network.id == network_id)
+        spans = list(s for s in [Span.from_qgis_feature(f) for f in list(spansLayer.getFeatures())] if
+                     s.ofds_network.id == network_id)
+
+        ofds_network = NetworkDescription.from_network_object(nodes[0].properties["network"])
 
         return cls(
-            nodes=nodes, nodesLayer=nodesLayer, spans=spans, spansLayer=spansLayer
+            nodes=nodes, nodesLayer=nodesLayer, spans=spans, spansLayer=spansLayer,
+            ofds_network=ofds_network
         )
 
     def __init__(
-        self,
-        nodes: List[Node],
-        nodesLayer: QgsVectorLayer,
-        spans: List[Span],
-        spansLayer: QgsVectorLayer,
+            self,
+            nodes: List[Node],
+            nodesLayer: QgsVectorLayer,
+            spans: List[Span],
+            spansLayer: QgsVectorLayer,
+            ofds_network: NetworkDescription,
     ):
         self.nodesLayer = nodesLayer
         self.spansLayer = spansLayer
 
         self.nodes = nodes
         self.spans = spans
+
+        self.ofds_network = ofds_network
 
         self.nodesByFeatureId = {n.featureId: n for n in self.nodes}
         self.spansByFeatureId = {s.featureId: s for s in self.spans}

@@ -5,7 +5,7 @@ from typing import Sequence, Union
 from PyQt5.QtWidgets import QFileDialog, QDialog
 from PyQt5 import QtCore
 
-from .model.qgis import write_geojson_from_features
+from .model.qgis_utils import write_geojson_from_features
 
 from .model.network import Feature
 

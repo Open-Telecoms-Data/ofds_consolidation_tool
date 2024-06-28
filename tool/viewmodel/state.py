@@ -1,19 +1,9 @@
 import logging
 from abc import abstractmethod
-from typing import ClassVar, Generic, List, Type, Union, Tuple, cast
 from enum import Enum
-
+from typing import ClassVar, Generic, List, Type, Union, Tuple, cast, Optional
 
 from qgis.core import QgsVectorLayer
-
-from ..model.settings import Settings
-
-from ..model.consolidation import (
-    ComparisonT,
-    NetworkNodesConsolidator,
-    NetworkSpansConsolidator,
-    AbstractNetworkConsolidator,
-)
 
 from ..model.comparison import (
     ComparisonOutcome,
@@ -23,16 +13,20 @@ from ..model.comparison import (
     SpanComparison,
     SpanComparisonOutcome,
 )
-
-from ..model.network import Network, Node, Span, FeatureT
-
+from ..model.consolidation import (
+    ComparisonT,
+    NetworkNodesConsolidator,
+    NetworkSpansConsolidator,
+    AbstractNetworkConsolidator,
+)
+from ..model.network import Network, Node, Span, FeatureT, NetworkDescription
+from ..model.settings import Settings
+from ..view_file_dialog import save_geojson_file_dialog
 from ..view_warningbox import (
     show_node_incomplete_consolidation_warning,
     show_multi_consolidation_warning,
     show_warningbox,
 )
-
-from ..view_file_dialog import save_geojson_file_dialog
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +53,50 @@ class AbstractToolState:
 class ToolLayerSelectState(AbstractToolState):
     state = ToolStateEnum.READY_FOR_SELECTION
     selectableLayers: List[QgsVectorLayer]
+    selectableNetworksA: List[Tuple[str, str]]  # [ (network id, network name) ]
+    selectableNetworksB: List[Tuple[str, str]]  # [ (network id, network name) ]
+
+    # A flag that's True when the layer selection combo boxes are being updated
+    # to prevent spamming update events.
+    _is_populating_layers: bool
 
     def __init__(self, selectableLayers: List[QgsVectorLayer]):
         self.selectableLayers = selectableLayers
+        self.selectableNetworksA = []
+        self.selectableNetworksB = []
+        self._is_populating_layers = False
 
     def __str__(self) -> str:
         return f"<ToolLayerSelectState n_layers={len(self.selectableLayers)}>"
+
+    def update_networks_list(self, nodes_layers: Tuple[Optional[QgsVectorLayer], Optional[QgsVectorLayer]],
+                             spans_layers: Tuple[Optional[QgsVectorLayer], Optional[QgsVectorLayer]]) -> "ToolLayerSelectState":
+        networks_a = set()
+        networks_b = set()
+
+        for nodes_layer, spans_layer, layers_networks in [(nodes_layers[0], spans_layers[0], networks_a),
+                                                          (nodes_layers[1], spans_layers[1], networks_b)]:
+            # Get networks from Nodes
+            if nodes_layer is not None:
+                for feature in list(nodes_layer.getFeatures()):
+                    try:
+                        node = Node.from_qgis_feature(feature)
+                        layers_networks.add((node.ofds_network.id, node.ofds_network.name))
+                    except Exception as e:
+                        logger.error("Error when processing feature", exc_info=e)
+
+            # Get networks from Spans
+            if spans_layer is not None:
+                for feature in list(spans_layer.getFeatures()):
+                    try:
+                        span = Span.from_qgis_feature(feature)
+                        layers_networks.add((span.ofds_network.id, span.ofds_network.name))
+                    except Exception as e:
+                        logger.error("Error when processing feature", exc_info=e)
+
+        self.selectableNetworksA = list(networks_a)
+        self.selectableNetworksB = list(networks_b)
+        return self
 
 
 class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolState):
@@ -86,10 +118,10 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
     current: int
 
     def __init__(
-        self,
-        networks: Tuple[Network, Network],
-        consolidator: AbstractNetworkConsolidator[FeatureT, ComparisonT],
-        settings: Settings,
+            self,
+            networks: Tuple[Network, Network],
+            consolidator: AbstractNetworkConsolidator[FeatureT, ComparisonT],
+            settings: Settings,
     ):
         self.settings = settings
         self.networks = networks
@@ -102,8 +134,8 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
 
     def __str__(self):
         return (
-            f"<ToolComparisonState state={self.state} total={self.nTotal}"
-            + f"compared={self.nCompared} current={self.current}>"
+                f"<ToolComparisonState state={self.state} total={self.nTotal}"
+                + f"compared={self.nCompared} current={self.current}>"
         )
 
     def gotoNextComparison(self):
@@ -117,7 +149,8 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
             self.current = self.nTotal - 1
 
     @abstractmethod
-    def finish(self) -> "ToolState": ...
+    def finish(self) -> "ToolState":
+        ...
 
     @property
     def nTotal(self) -> int:
@@ -183,7 +216,7 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
                 if not show_multi_consolidation_warning(
-                    "Primary", comparison.feature_a, other_span
+                        "Primary", comparison.feature_a, other_span
                 ):
                     return False
 
@@ -191,7 +224,7 @@ class AbstractToolComparisonState(Generic[FeatureT, ComparisonT], AbstractToolSt
             (other_comparison, other_outcome) = self.comparisons_outcomes[other_i]
             if other_outcome is not None and other_outcome.consolidate is not False:
                 if not show_multi_consolidation_warning(
-                    "Secondary", comparison.feature_b, other_span
+                        "Secondary", comparison.feature_b, other_span
                 ):
                     return False
 
@@ -239,9 +272,9 @@ class ToolNodeComparisonState(AbstractToolComparisonState[Node, NodeComparison])
     consolidator: NetworkNodesConsolidator
 
     def __init__(
-        self,
-        networks: Tuple[Network, Network],
-        settings: Settings,
+            self,
+            networks: Tuple[Network, Network],
+            settings: Settings,
     ):
 
         consolidator = NetworkNodesConsolidator(
@@ -278,6 +311,7 @@ class ToolNodeComparisonState(AbstractToolComparisonState[Node, NodeComparison])
         span_comparison_state = ToolSpanComparisonState(
             networks=(new_network_a, new_network_b),
             settings=self.settings,
+            new_ofds_network=self.consolidator.new_ofds_network,
         )
 
         if span_comparison_state.nTotal < 1:
@@ -299,13 +333,15 @@ class ToolSpanComparisonState(AbstractToolComparisonState[Span, SpanComparison])
     consolidator: NetworkSpansConsolidator
 
     def __init__(
-        self,
-        networks: Tuple[Network, Network],
-        settings: Settings,
+            self,
+            networks: Tuple[Network, Network],
+            new_ofds_network: NetworkDescription,
+            settings: Settings,
     ):
         consolidator = NetworkSpansConsolidator(
             network_a=networks[0],
             network_b=networks[1],
+            new_ofds_network=new_ofds_network,
         )
 
         super().__init__(

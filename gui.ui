@@ -29,181 +29,182 @@
       <attribute name="title">
        <string>Select Input</string>
       </attribute>
-      <widget class="QWidget" name="layoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>40</y>
-         <width>911</width>
-         <height>122</height>
-        </rect>
-       </property>
-       <layout class="QHBoxLayout" name="selectFormsLayout">
-        <item>
-         <widget class="QGroupBox" name="groupBoxA">
-          <property name="title">
-           <string>Primary Network</string>
-          </property>
-          <layout class="QFormLayout" name="selectFormA">
-           <item row="0" column="0">
-            <widget class="QLabel" name="nodesLabelA">
-             <property name="text">
-              <string>Nodes</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="nodesComboBoxA"/>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="spansLabelA">
-             <property name="text">
-              <string>Spans</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="spansComboBoxA"/>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBoxB">
-          <property name="title">
-           <string>Secondary Network</string>
-          </property>
-          <layout class="QFormLayout" name="selectFormB">
-           <item row="0" column="0">
-            <widget class="QLabel" name="nodesLabelB">
-             <property name="text">
-              <string>Nodes</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="nodesComboBoxB"/>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="spansLabelB">
-             <property name="text">
-              <string>Spans</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="spansComboBoxB"/>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QPushButton" name="startButton">
-       <property name="geometry">
-        <rect>
-         <x>810</x>
-         <y>860</y>
-         <width>103</width>
-         <height>36</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Start</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="settingsLabel">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>190</y>
-         <width>81</width>
-         <height>19</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Settings</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="inputSelectionLabel">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>10</y>
-         <width>141</width>
-         <height>19</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Input Selection</string>
-       </property>
-      </widget>
-      <widget class="QWidget" name="layoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>220</y>
-         <width>354</width>
-         <height>140</height>
-        </rect>
-       </property>
-       <layout class="QFormLayout" name="settingsFormLayout">
-        <item row="0" column="0">
-         <widget class="QLabel" name="autoThresholdLabel">
-          <property name="text">
-           <string>Auto Consolidate Above (%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QSpinBox" name="autoThresholdSpinBox">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>100</number>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="askThresholdLabel">
-          <property name="text">
-           <string>Ask Above (%)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QSpinBox" name="askThresholdSpinBox">
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>0</number>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QSpinBox" name="nodesMatchRadiusSpinBox">
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>200</number>
-          </property>
-          <property name="value">
-           <number>10</number>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Node Match Radius (km)</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="6" column="1">
+        <widget class="QPushButton" name="startButton">
+         <property name="text">
+          <string>Start</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="inputSelectionLabel">
+         <property name="text">
+          <string>Input Selection</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <layout class="QHBoxLayout" name="selectFormsLayout">
+         <item>
+          <widget class="QGroupBox" name="groupBoxA">
+           <property name="title">
+            <string>Primary Network</string>
+           </property>
+           <layout class="QFormLayout" name="selectFormA">
+            <item row="0" column="0">
+             <widget class="QLabel" name="nodesLabelA">
+              <property name="text">
+               <string>Nodes</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="nodesComboBoxA"/>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="spansLabelA">
+              <property name="text">
+               <string>Spans</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="spansComboBoxA"/>
+            </item>
+            <item row="2" column="1">
+             <widget class="QComboBox" name="networkComboBoxA"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="networkLabelA">
+              <property name="text">
+               <string>Network</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBoxB">
+           <property name="title">
+            <string>Secondary Network</string>
+           </property>
+           <layout class="QFormLayout" name="selectFormB">
+            <item row="0" column="0">
+             <widget class="QLabel" name="nodesLabelB">
+              <property name="text">
+               <string>Nodes</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="nodesComboBoxB"/>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="spansLabelB">
+              <property name="text">
+               <string>Spans</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="spansComboBoxB"/>
+            </item>
+            <item row="2" column="1">
+             <widget class="QComboBox" name="networkComboBoxB"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="networkLabelB">
+              <property name="text">
+               <string>Network</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="0">
+        <layout class="QFormLayout" name="settingsFormLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="autoThresholdLabel">
+           <property name="text">
+            <string>Auto Consolidate Above (%)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QSpinBox" name="autoThresholdSpinBox">
+           <property name="maximum">
+            <number>100</number>
+           </property>
+           <property name="value">
+            <number>100</number>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="askThresholdLabel">
+           <property name="text">
+            <string>Ask Above (%)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="askThresholdSpinBox">
+           <property name="maximum">
+            <number>100</number>
+           </property>
+           <property name="value">
+            <number>0</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Node Match Radius (km)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="nodesMatchRadiusSpinBox">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>200</number>
+           </property>
+           <property name="value">
+            <number>10</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="settingsLabel">
+         <property name="text">
+          <string>Settings</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="tabConsolidateNodes">
       <attribute name="title">
@@ -566,8 +567,8 @@
    <slot>close()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>811</x>
-     <y>883</y>
+     <x>812</x>
+     <y>877</y>
     </hint>
     <hint type="destinationlabel">
      <x>473</x>
