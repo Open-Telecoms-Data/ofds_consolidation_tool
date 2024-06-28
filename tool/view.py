@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Set
 
 from PyQt5.QtWidgets import (
     QTextEdit,
@@ -20,6 +20,7 @@ from qgis.core import (
 )
 from qgis.gui import QgsMapCanvas
 
+from .helpers import EPSG3857, getOpenStreetMapLayer
 from .model.comparison import (
     ConsolidationReason,
     NodeComparison,
@@ -35,7 +36,7 @@ from .viewmodel.state import (
     ToolStateEnum,
 )
 from ..gui import Ui_OFDSDedupToolDialog
-from ..helpers import EPSG3857, getOpenStreetMapLayer
+from .helpers import EPSG3857, getOpenStreetMapLayer
 from ..resources import STYLESHEET_NODES, STYLESHEET_SPANS
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,6 @@ logger = logging.getLogger(__name__)
 # Scale ratio of the displayed minimaps when showing Nodes
 # e.g. 1:25,000 would be 25000
 MINIMAP_SCALE_RATIO = 100000  # 1:100,000
-
 
 DISPLAY_NODE_PROPERTIES = [
     "id",
@@ -67,7 +67,6 @@ DISPLAY_NODE_PROPERTIES = [
     "internationalConnections/country",
     "networkProviders",
 ]
-
 
 DISPLAY_SPAN_PROPERTIES = [
     "id",
@@ -133,9 +132,9 @@ class MiniMapView:
     backgroundLayer: QgsMapLayer
 
     def __init__(
-        self,
-        mapCanvas: QgsMapCanvas,
-        backgroundLayer: QgsMapLayer,
+            self,
+            mapCanvas: QgsMapCanvas,
+            backgroundLayer: QgsMapLayer,
     ):
         self.mapCanvas = mapCanvas
         self.backgroundLayer = backgroundLayer
@@ -158,7 +157,7 @@ class MiniMapView:
     def update(self, state: Optional[State]):
         if state is None:
             # Nothing to display, so display nothing
-            logger.info("RESET MAP")
+            logger.debug("RESET MAP")
             self.layers = None
             self.mapCanvas.setLayers([])
             self.mapCanvas.refresh()
@@ -178,8 +177,8 @@ class MiniMapView:
 
         # Check to make sure the layers haven't change for some reason
         if (
-            state.nodesLayer != self.layers.nodesLayer
-            or state.spansLayer != self.layers.spansLayer
+                state.nodesLayer != self.layers.nodesLayer
+                or state.spansLayer != self.layers.spansLayer
         ):
             # We shouldn't get surprise layer changes
             raise InvalidViewState("Unexpected Layer change")
@@ -238,8 +237,10 @@ class InfoPanelView:
         exact_match_rows = [row for row in hi_score_rows if row[3] == 1]
         strong_match_rows = [row for row in hi_score_rows if row not in exact_match_rows]
         zero_score_rows = [row for row in all_score_rows if row[3] == 0]
-        missing_data_rows = [row for row in zero_score_rows if row[1] is None or row[1] is [] or row[2] is None or row[2] is []]
-        low_score_rows = [row for row in all_score_rows if row[0] not in hi_score_props and row[3] > 0 and row not in missing_data_rows]
+        missing_data_rows = [row for row in zero_score_rows if
+                             row[1] is None or row[1] is [] or row[2] is None or row[2] is []]
+        low_score_rows = [row for row in all_score_rows if
+                          row[0] not in hi_score_props and row[3] > 0 and row not in missing_data_rows]
 
         # Display Node info
         info_html = f"""
@@ -260,13 +261,12 @@ class InfoPanelView:
             <th align="left">Value</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td></tr>" for k,va,_,_ in exact_match_rows)
-          }
+            "".join(f"<tr><td>{k}</td><td>{va}</td></tr>" for k, va, _, _ in exact_match_rows)
+            }
         </table>
             """
 
         if len(strong_match_rows) > 0:
-
             info_html = info_html + f"""
         <h3>Strong matches</h3>
         <p>These properties are very similar in both networks for this node:</p>
@@ -278,14 +278,13 @@ class InfoPanelView:
             <th align="left">Confidence</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in strong_match_rows)
-          }
+            "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc * 100)}%</td></tr>"
+                    for k, va, vb, sc in strong_match_rows)
+            }
         </table>
             """
 
         if len(low_score_rows) > 0:
-
             info_html = info_html + f"""
 
         <h3>Unlikely matches</h3>
@@ -298,21 +297,20 @@ class InfoPanelView:
             <th align="left">Confidence</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in low_score_rows)
-          }
+            "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc * 100)}%</td></tr>"
+                    for k, va, vb, sc in low_score_rows)
+            }
         </table>
         """
 
         if len(missing_data_rows) > 0:
-
             info_html = info_html + f"""
         <h3>Missing data</h3>
         <p>These properties are missing from one or both of the networks for this node:</p>
         <ul>
         {
-            "".join(f"<li>{k}</li>" for k,_,_,_ in missing_data_rows)
-        }
+            "".join(f"<li>{k}</li>" for k, _, _, _ in missing_data_rows)
+            }
         </ul>
             """
         return info_html
@@ -337,8 +335,10 @@ class InfoPanelView:
         exact_match_rows = [row for row in hi_score_rows if row[3] == 1]
         strong_match_rows = [row for row in hi_score_rows if row not in exact_match_rows]
         zero_score_rows = [row for row in all_score_rows if row[3] == 0]
-        missing_data_rows = [row for row in zero_score_rows if row[1] is None or row[1] is [] or row[2] is None or row[2] is []]
-        low_score_rows = [row for row in all_score_rows if row[0] not in hi_score_props and row[3] > 0 and row not in missing_data_rows]
+        missing_data_rows = [row for row in zero_score_rows if
+                             row[1] is None or row[1] is [] or row[2] is None or row[2] is []]
+        low_score_rows = [row for row in all_score_rows if
+                          row[0] not in hi_score_props and row[3] > 0 and row not in missing_data_rows]
 
         info_html = f"""
         <h2>Overall Confidence: {int(comparison.confidence)}%</h2>
@@ -359,13 +359,12 @@ class InfoPanelView:
             <th align="left">Value</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td></tr>" for k,va,_,_ in exact_match_rows)
-          }
+            "".join(f"<tr><td>{k}</td><td>{va}</td></tr>" for k, va, _, _ in exact_match_rows)
+            }
         </table>
             """
 
         if len(strong_match_rows) > 0:
-
             info_html = info_html + f"""
         <h3>Strong matches</h3>
         <p>These properties are very similar in both networks for this span:</p>
@@ -377,14 +376,13 @@ class InfoPanelView:
             <th align="left">Confidence</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in strong_match_rows)
-          }
+            "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc * 100)}%</td></tr>"
+                    for k, va, vb, sc in strong_match_rows)
+            }
         </table>
             """
 
         if len(low_score_rows) > 0:
-
             info_html = info_html + f"""
 
         <h3>Unlikely matches</h3>
@@ -397,21 +395,20 @@ class InfoPanelView:
             <th align="left">Confidence</th>
           </tr>
           {
-              "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc*100)}%</td></tr>"
-                      for k,va,vb,sc in low_score_rows)
-          }
+            "".join(f"<tr><td>{k}</td><td>{va}</td><td>{vb}</td><td>{int(sc * 100)}%</td></tr>"
+                    for k, va, vb, sc in low_score_rows)
+            }
         </table>
         """
 
         if len(missing_data_rows) > 0:
-
             info_html = info_html + f"""
         <h3>Missing data</h3>
         <p>These properties are missing from one or both of the networks for this span:</p>
         <ul>
         {
-            "".join(f"<li>{k}</li>" for k,_,_,_ in missing_data_rows)
-        }
+            "".join(f"<li>{k}</li>" for k, _, _, _ in missing_data_rows)
+            }
         </ul>
             """
 
@@ -452,32 +449,65 @@ class LayerSelectView:
 
     nodesComboBoxes: Tuple[QComboBox, QComboBox]
     spansComboBoxes: Tuple[QComboBox, QComboBox]
+    networksComboBoxes: Tuple[QComboBox, QComboBox]
     startButton: QWidget
 
+    _previous_networks: Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]
+    _previous_layers_ids: Set[str]
+
     def __init__(
-        self,
-        nodesComboBoxes: Tuple[QComboBox, QComboBox],
-        spansComboBoxes: Tuple[QComboBox, QComboBox],
-        startButton: QWidget,
+            self,
+            nodesComboBoxes: Tuple[QComboBox, QComboBox],
+            spansComboBoxes: Tuple[QComboBox, QComboBox],
+            networksComboBoxes: Tuple[QComboBox, QComboBox],
+            startButton: QWidget,
     ):
         self.nodesComboBoxes = nodesComboBoxes
         self.spansComboBoxes = spansComboBoxes
+        self.networksComboBoxes = networksComboBoxes
         self.startButton = startButton
+        self._previous_networks = ([], [])
+        self._previous_layers_ids = set()
 
-    def _populateSelectionDropdowns(self, layers: List[QgsVectorLayer]):
+    def _populateSelectionDropdowns(self, state: ToolLayerSelectState, layers: List[QgsVectorLayer]):
         # Populate the drop-down boxes (aka ComboBox)
         # with the layers loaded into the project
+        #
+        # WARNING: Only update ComboBoxes if the list of layers hasn't changed, or else infinite loop ensues.
+        layers_ids: Set[str] = set(l.id() for l in layers)
+        if layers_ids == self._previous_layers_ids:
+            return
+
+        # Important flag to not accidentally cause recursive updates
+        # BEGIN
+        state._is_populating_layers = True
+
+        nodes_layers = [ layer for layer in layers if layer.geometryType() == QgsWkbTypes.GeometryType.PointGeometry]
+        spans_layers = [ layer for layer in layers if layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry]
+
         for ncb in self.nodesComboBoxes:
             ncb.clear()
-            for layer in layers:
-                if layer.geometryType() == QgsWkbTypes.GeometryType.PointGeometry:
-                    ncb.addItem(layer.name(), layer)
+            for layer in nodes_layers:
+                ncb.addItem(layer.name(), layer)
 
         for scb in self.spansComboBoxes:
             scb.clear()
-            for layer in layers:
-                if layer.geometryType() == QgsWkbTypes.GeometryType.LineGeometry:
-                    scb.addItem(layer.name(), layer)
+            for layer in spans_layers:
+                scb.addItem(layer.name(), layer)
+
+        self._previous_layers_ids = layers_ids
+
+        # END
+        state._is_populating_layers = False
+
+        # Find Network IDs for the selected layers and update the Network selection list
+        nodes_layer_a: Optional[QgsVectorLayer] = self.nodesComboBoxes[0].currentData()
+        spans_layer_a: Optional[QgsVectorLayer] = self.spansComboBoxes[0].currentData()
+
+        nodes_layer_b: Optional[QgsVectorLayer] = self.nodesComboBoxes[1].currentData()
+        spans_layer_b: Optional[QgsVectorLayer] = self.spansComboBoxes[1].currentData()
+
+        return state.update_networks_list((nodes_layer_a, nodes_layer_b), (spans_layer_a, spans_layer_b))
 
     def update(self, state: Optional[ToolState]):
         """
@@ -485,10 +515,42 @@ class LayerSelectView:
         We don't want the user to change layers in the middle of the process!
         """
         if isinstance(state, ToolLayerSelectState):
-            self._populateSelectionDropdowns(state.selectableLayers)
+            if state._is_populating_layers is True:
+                return  # Prevent recursive updates
+
+            self._populateSelectionDropdowns(state, state.selectableLayers)
+
             enable_layer_select = True
+
+            # Enable & populate the Network Selection dropdowns if they've already selected layers
+            if enable_layer_select and len(state.selectableNetworksA) > 0:
+                self.networksComboBoxes[0].setEnabled(True)
+                if set(self._previous_networks[0]) != set(state.selectableNetworksA):
+                    self.networksComboBoxes[0].clear()
+                    for (net_id, net_name) in state.selectableNetworksA:
+                        self.networksComboBoxes[0].addItem(f"{net_name} ({net_id})", net_id)
+            else:
+                self.networksComboBoxes[0].setEnabled(False)
+                self.networksComboBoxes[0].clear()
+
+            if enable_layer_select and len(state.selectableNetworksB) > 0:
+                self.networksComboBoxes[1].setEnabled(True)
+                if set(self._previous_networks[1]) != set(state.selectableNetworksB):
+                    self.networksComboBoxes[1].clear()
+                    for (net_id, net_name) in state.selectableNetworksB:
+                        self.networksComboBoxes[1].addItem(f"{net_name} ({net_id})", net_id)
+            else:
+                self.networksComboBoxes[1].setEnabled(False)
+                self.networksComboBoxes[1].clear()
+
+            self._previous_networks = (state.selectableNetworksA.copy(), state.selectableNetworksB.copy())
+
         else:
             enable_layer_select = False
+            self.networksComboBoxes[0].setEnabled(False)
+            self.networksComboBoxes[0].clear()
+            self.networksComboBoxes[1].setEnabled(False)
+            self.networksComboBoxes[1].clear()
 
         # Set the Enabled/Disabled state for our widgets
         for widget in self.nodesComboBoxes:
@@ -498,6 +560,7 @@ class LayerSelectView:
             widget.setEnabled(enable_layer_select)
 
         self.startButton.setEnabled(enable_layer_select)
+
 
 
 class ComparisonView:
@@ -520,17 +583,17 @@ class ComparisonView:
     finishButton: QPushButton
 
     def __init__(
-        self,
-        project: QgsProject,
-        canvases: Tuple[QgsMapCanvas, QgsMapCanvas],
-        infoPanel: QTextEdit,
-        sameButton: QPushButton,
-        notSameButton: QPushButton,
-        nextButton: QPushButton,
-        prevButton: QPushButton,
-        progressLabel: QLabel,
-        progressBar: QProgressBar,
-        finishButton: QPushButton,
+            self,
+            project: QgsProject,
+            canvases: Tuple[QgsMapCanvas, QgsMapCanvas],
+            infoPanel: QTextEdit,
+            sameButton: QPushButton,
+            notSameButton: QPushButton,
+            nextButton: QPushButton,
+            prevButton: QPushButton,
+            progressLabel: QLabel,
+            progressBar: QProgressBar,
+            finishButton: QPushButton,
     ):
         osmLayer = getOpenStreetMapLayer(project)
         self.mapViews = (
@@ -547,7 +610,7 @@ class ComparisonView:
         self.finishButton = finishButton
 
     def _updateComparing(
-        self, state: Union[ToolNodeComparisonState, ToolSpanComparisonState]
+            self, state: Union[ToolNodeComparisonState, ToolSpanComparisonState]
     ):
         """
         Update UI when we are currently comparing a pair of features.
@@ -591,9 +654,9 @@ class ComparisonView:
         self.prevButton.setEnabled(True)
 
         self.progressLabel.setText(
-            f"Node Comparison {state.current+1} of {state.nTotal}"
+            f"Node Comparison {state.current + 1} of {state.nTotal}"
             if state.state == ToolStateEnum.COMPARING_NODES
-            else f"Span Comparison {state.current+1} of {state.nTotal}"
+            else f"Span Comparison {state.current + 1} of {state.nTotal}"
         )
         self.progressBar.setEnabled(True)
         self.progressBar.setMinimum(0)
@@ -678,6 +741,7 @@ class ToolView:
         self.layerSelectView = LayerSelectView(
             nodesComboBoxes=(ui.nodesComboBoxA, ui.nodesComboBoxB),
             spansComboBoxes=(ui.spansComboBoxA, ui.spansComboBoxB),
+            networksComboBoxes=(ui.networkComboBoxA, ui.networkComboBoxB),
             startButton=ui.startButton,
         )
 

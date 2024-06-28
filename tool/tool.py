@@ -45,6 +45,10 @@ class OFDSDedupToolDialog(QDialog):
 
         # Connect UI signals to slots on this class
         self.ui.startButton.clicked.connect(self.onStartButtonClicked)
+        self.ui.nodesComboBoxA.currentIndexChanged.connect(self.onLayerSelectComboBoxUpdate)
+        self.ui.spansComboBoxA.currentIndexChanged.connect(self.onLayerSelectComboBoxUpdate)
+        self.ui.nodesComboBoxB.currentIndexChanged.connect(self.onLayerSelectComboBoxUpdate)
+        self.ui.spansComboBoxB.currentIndexChanged.connect(self.onLayerSelectComboBoxUpdate)
 
         self.ui.sameNodesButton.clicked.connect(self.onSameNodeButtonClicked)
         self.ui.notSameNodesButton.clicked.connect(self.onNotSameNodeButtonClicked)
@@ -82,6 +86,10 @@ class OFDSDedupToolDialog(QDialog):
     def onStartButtonClicked(self):
         logger.debug("Start button clicked")
         self.set_state(self.controller.onStartButton(self.state))
+
+    def onLayerSelectComboBoxUpdate(self):
+        logger.debug("Layer select combo box updated")
+        self.set_state(self.controller.onLayerSelectComboBoxUpdate(self.state))
 
     # Nodes Comparison
     def onSameNodeButtonClicked(self):
