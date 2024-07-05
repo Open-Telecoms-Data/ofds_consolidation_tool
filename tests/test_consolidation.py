@@ -140,6 +140,7 @@ def test_consolidation(qgis_app, qgis_new_project, request):
         assert span.properties["start"]["id"] == span.start_id
         assert span.end_id in node_ids
         assert span.properties["end"]["id"] == span.end_id
+        assert len(span.properties["network"].get("links", [])) > 0
 
     # Check that merged nodes & spans have multiple networkProviders
     assert (
