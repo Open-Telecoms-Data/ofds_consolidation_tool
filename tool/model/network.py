@@ -36,6 +36,16 @@ class NetworkDescription:
         return {
             "id": self.id,
             "name": self.name,
+            "crs": {
+                "name": "urn:ogc:def:crs:OGC::CRS84",
+                "uri": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+            },
+            "links": [
+                {
+                    "rel": "describedby",
+                    "href": "https://raw.githubusercontent.com/Open-Telecoms-Data/open-fibre-data-standard/0__2__0/schema/network-schema.json"
+                }
+            ]
         }
 
 
