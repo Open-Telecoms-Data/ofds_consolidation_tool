@@ -113,7 +113,7 @@ class NetworkNodesConsolidator(AbstractNetworkConsolidator[Node, NodeComparison]
         self.user_comparisons = []
 
         self.new_ofds_network = NetworkDescription(
-            id=uuid.uuid4().hex,
+            id=str(uuid.uuid4()),
             name=f"Consolidated Network of {network_a.ofds_network.name} and {network_b.ofds_network.name}"
         )
 
