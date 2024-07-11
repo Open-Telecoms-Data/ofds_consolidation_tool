@@ -284,7 +284,7 @@ class Ui_OFDSDedupToolDialog(object):
 
     def retranslateUi(self, OFDSDedupToolDialog):
         _translate = QtCore.QCoreApplication.translate
-        OFDSDedupToolDialog.setWindowTitle(_translate("OFDSDedupToolDialog", "OFDS Dedup Tool"))
+        OFDSDedupToolDialog.setWindowTitle(_translate("OFDSDedupToolDialog", "OFDS Consolidation Tool"))
         self.startButton.setText(_translate("OFDSDedupToolDialog", "Start"))
         self.inputSelectionLabel.setText(_translate("OFDSDedupToolDialog", "Input Selection"))
         self.groupBoxA.setTitle(_translate("OFDSDedupToolDialog", "Primary Network"))
