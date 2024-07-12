@@ -43,7 +43,7 @@ class NetworkDescription:
             "links": [
                 {
                     "rel": "describedby",
-                    "href": "https://raw.githubusercontent.com/Open-Telecoms-Data/open-fibre-data-standard/0__2__0/schema/network-schema.json"
+                    "href": "https://raw.githubusercontent.com/Open-Telecoms-Data/open-fibre-data-standard/0__3__0/schema/network-schema.json"
                 }
             ]
         }
