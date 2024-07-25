@@ -15,8 +15,8 @@ QGIS plugins are written in pure Python, and external libraries must be bundled 
 
 To read more about how to develop plugins for QGIS in general, see:
 
-- https://www.qgistutorials.com/en/docs/3/building_a_python_plugin.html
-- https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/index.html#developing-python-plugins
+- [https://www.qgistutorials.com/en/docs/3/building_a_python_plugin.html](https://www.qgistutorials.com/en/docs/3/building_a_python_plugin.html)
+- [https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/index.html#developing-python-plugins](https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/index.html#developing-python-plugins)
 
 ## Setup
 
@@ -54,13 +54,13 @@ Configure your IDE/Python environment with access to QGIS python libraries:
 export PYTHONPATH="$PYTHONPATH:/usr/share/qgis/python/plugins:/usr/share/qgis/python"
 ```
 
-See: https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#a-note-on-configuring-your-ide-on-linux-and-windows
+See: [https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#a-note-on-configuring-your-ide-on-linux-and-windows](https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#a-note-on-configuring-your-ide-on-linux-and-windows)
 
 In QGIS, go to `Plugins > Manage and Install Plugins`. Search for 'odfs', and activate our plugin in the list. A button should appear on the menu that says "Consolidate OFDS".
 
 Install the `Plugin Reloader` plugin so you can reload any code changes you make without having to restart QGIS. #todo
 
-You may also find it helpful to install the `First Aid` plugin; see: https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#useful-plugins-for-writing-python-plugins
+You may also find it helpful to install the `First Aid` plugin; see: [https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#useful-plugins-for-writing-python-plugins](https://docs.qgis.org/testing/en/docs/pyqgis_developer_cookbook/plugins/ide_debugging.html#useful-plugins-for-writing-python-plugins)
 
 When you make changes to the plugin code, you can reload the plugin using `Plugins > Plugin Reloader`. The first time, configure it to reload the ofds_consolidation_tool plugin. After that you can use ctrl/cmd+F5.
 
