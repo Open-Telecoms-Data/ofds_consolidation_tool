@@ -54,3 +54,9 @@ The tool allows you to configure:
 ## What can this tool not do?
 
 This tool cannot consolidate datasets that do not conform to the [Open Fibre Data Standard](https://open-fibre-data-standard.readthedocs.io/en/latest/index.html).
+
+## Security and privacy
+
+* The tool does not collect any personal or usage data.
+* The tool does not store copies of any input or output data, except when the user chooses to save the output data to their computer, in a location of their choosing.
+* No data is sent or retrieved over the web from the tool.
