@@ -117,7 +117,7 @@ Tip: To view a map underneath the nodes and spans, go to the Browser panel > `XY
 7. The tool presents data on nodes and spans which are geographically close to each other, pair by pair, along with a confidence score for how likely they are to be duplicates (see [scoring](#scoring)). The pair being compared will be highlighted in yellow in the tools map inserts. Click `Consolidate` to confirm the pair presented are duplicates and should be merged. Click `Keep Both` to confirm the pair are _not_ duplicates, and should not be merged. If you're not sure, click `Next`. You can use the `Next` and `Previous` buttons to cycle through the comparisons until you have marked them all as either `Consolidate` or `Keep Both`. If there are multiple potential matches, once you have confirmed one match all other potential matches will be automatically assigned to `Keep Both`. If you then try and consolidate one of these pairs the tool will warn you and give you the opportunity to change which of the pairs is consolidated.
 8. When you've reviewed all of the nodes comparisons, click `Finish` and repeat step 7 for the spans. The results of your nodes consolidation will be used to select potential span matches, only spans with consolidated nodes will be presented.
 9. Once you've reviewed all of the spans comparisons, click `Finish`.
-9. Choose where you would like to save the consolidated node and span GeoJSON files.
+10. Choose where you would like to save the consolidated node and span GeoJSON files.
 
 ### Settings
 
